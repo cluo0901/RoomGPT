@@ -2,6 +2,8 @@ import { Ratelimit } from "@upstash/ratelimit";
 import redis from "../../utils/redis";
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
+import { buildPrompt } from "../../utils/prompts";
+export const runtime = "nodejs";
 
 // Create a new ratelimiter, that allows 5 requests per 24 hours
 const ratelimit = redis
@@ -36,58 +38,67 @@ export async function POST(request: Request) {
 
   const { imageUrl, theme, room } = await request.json();
 
-  // POST request to Replicate to start the image restoration generation process
-  let startResponse = await fetch("https://api.replicate.com/v1/predictions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: "Token " + process.env.REPLICATE_API_KEY,
-    },
-    body: JSON.stringify({
-      version:
-        "854e8727697a057c525cdb45ab037f64ecca770a1769cc52287c2e56472a247b",
-      input: {
-        image: imageUrl,
-        prompt:
-          room === "Gaming Room"
-            ? "a room for gaming with gaming computers, gaming consoles, and gaming chairs"
-            : `a ${theme.toLowerCase()} ${room.toLowerCase()}`,
-        a_prompt:
-          "best quality, extremely detailed, photo from Pinterest, interior, cinematic photo, ultra-detailed, ultra-realistic, award-winning",
-        n_prompt:
-          "longbody, lowres, bad anatomy, bad hands, missing fingers, extra digit, fewer digits, cropped, worst quality, low quality",
-      },
-    }),
-  });
-
-  let jsonStartResponse = await startResponse.json();
-
-  let endpointUrl = jsonStartResponse.urls.get;
-
-  // GET request to get the status of the image restoration process & return the result when it's ready
-  let restoredImage: string | null = null;
-  while (!restoredImage) {
-    // Loop in 1s intervals until the alt text is ready
-    console.log("polling for result...");
-    let finalResponse = await fetch(endpointUrl, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: "Token " + process.env.REPLICATE_API_KEY,
-      },
-    });
-    let jsonFinalResponse = await finalResponse.json();
-
-    if (jsonFinalResponse.status === "succeeded") {
-      restoredImage = jsonFinalResponse.output;
-    } else if (jsonFinalResponse.status === "failed") {
-      break;
-    } else {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-    }
+  if (!process.env.OPENAI_API_KEY) {
+    return new Response("Missing OPENAI_API_KEY", { status: 500 });
   }
 
-  return NextResponse.json(
-    restoredImage ? restoredImage : "Failed to restore image"
-  );
+  if (!imageUrl || !theme || !room) {
+    return new Response("Invalid request payload", { status: 400 });
+  }
+
+  try {
+    const model = process.env.OPENAI_IMAGE_MODEL || "gpt-image-1";
+    const prompt = buildPrompt(room, theme);
+
+    const openaiResponse = await fetch(
+      "https://api.openai.com/v1/images/generations",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model,
+          prompt,
+          size: "1024x1024",
+        }),
+      }
+    );
+
+    const openaiJson = await openaiResponse
+      .json()
+      .catch(() => ({ error: { message: "Invalid response from OpenAI" } }));
+
+    if (!openaiResponse.ok) {
+      console.error("OpenAI API error", openaiJson);
+      const errorMessage =
+        openaiJson?.error?.message ??
+        `Image generation failed (${openaiResponse.status})`;
+      return NextResponse.json(
+        { error: errorMessage },
+        { status: openaiResponse.status }
+      );
+    }
+
+    const imageBase64 = openaiJson?.data?.[0]?.b64_json;
+    const imageUrlFromApi = openaiJson?.data?.[0]?.url;
+
+    if (!imageBase64 && !imageUrlFromApi) {
+      return NextResponse.json(
+        { error: "Failed to generate image" },
+        { status: 500 }
+      );
+    }
+
+    const imageDataUrl = imageBase64
+      ? `data:image/png;base64,${imageBase64}`
+      : imageUrlFromApi!;
+
+    return NextResponse.json({ original: imageUrl, generated: imageDataUrl });
+  } catch (error: any) {
+    console.error("OpenAI image generation error", error);
+    const message = error?.message ?? "Image generation failed";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 }

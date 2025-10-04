@@ -8,7 +8,7 @@ This is the previous and open source version of RoomGPT.io (a paid SaaS product)
 
 ## How it works
 
-It uses an ML model called [ControlNet](https://github.com/lllyasviel/ControlNet) to generate variations of rooms. This application gives you the ability to upload a photo of any room, which will send it through this ML Model using a Next.js API route, and return your generated room. The ML Model is hosted on [Replicate](https://replicate.com) and [Bytescale](https://www.bytescale.com/) is used for image storage.
+It uses the [OpenAI Images](https://platform.openai.com/docs/guides/images) API to generate room redesign concepts based on the theme and room type you select. This application lets you upload a photo of any room, sends your request through a Next.js API route, and returns an AI-generated concept image. [Bytescale](https://www.bytescale.com/) is used for image storage.
 
 ## Running Locally
 
@@ -18,15 +18,23 @@ It uses an ML model called [ControlNet](https://github.com/lllyasviel/ControlNet
 git clone https://github.com/Nutlope/roomGPT
 ```
 
-### Creating a account on Replicate to get an API key.
+### Creating an OpenAI account to get an API key.
 
-1. Go to [Replicate](https://replicate.com/) to make an account.
-2. Click on your profile picture in the top left corner, and click on "API Tokens".
-3. Here you can find your API token. Copy it.
+1. Go to [OpenAI](https://platform.openai.com/) to make an account.
+2. Open the dashboard's API Keys page and create a new secret key.
+3. Copy the key (it starts with `sk-` or `sk-proj-`).
 
 ### Storing the API keys in .env
 
 Create a file in root directory of project with env. And store your API key in it, as shown in the .example.env file.
+
+```
+OPENAI_API_KEY=your-openai-key
+OPENAI_IMAGE_MODEL=gpt-image-1  # optional; use e.g. dall-e-2 if your org lacks access
+NEXT_PUBLIC_UPLOAD_API_KEY=optional-bytescale-key
+```
+
+If you see an error about verifying your organization for `gpt-image-1`, either complete the verification steps in the OpenAI dashboard or set `OPENAI_IMAGE_MODEL=dall-e-2` (or another image-capable model you have access to) and restart the dev server.
 
 If you'd also like to do rate limiting, create an account on UpStash, create a Redis database, and populate the two environment variables in `.env` as well. If you don't want to do rate limiting, you don't need to make any changes.
 

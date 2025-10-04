@@ -8,6 +8,11 @@ function forceDownload(blobUrl: string, filename: string) {
 }
 
 export default function downloadPhoto(url: string, filename: string) {
+  if (url.startsWith("data:")) {
+    forceDownload(url, filename);
+    return;
+  }
+
   fetch(url, {
     headers: new Headers({
       Origin: location.origin,

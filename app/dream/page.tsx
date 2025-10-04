@@ -80,6 +80,7 @@ export default function DreamPage() {
   async function generatePhoto(fileUrl: string) {
     await new Promise((resolve) => setTimeout(resolve, 200));
     setLoading(true);
+    setRestoredLoaded(false);
     const res = await fetch("/generate", {
       method: "POST",
       headers: {
@@ -88,12 +89,35 @@ export default function DreamPage() {
       body: JSON.stringify({ imageUrl: fileUrl, theme, room }),
     });
 
-    let newPhoto = await res.json();
-    if (res.status !== 200) {
-      setError(newPhoto);
-    } else {
-      setRestoredImage(newPhoto[1]);
+    if (!res.ok) {
+      const errorText = await res.text();
+      let errorMessage = "Image generation failed";
+      try {
+        const parsed = JSON.parse(errorText);
+        if (typeof parsed?.error === "string") {
+          errorMessage = parsed.error;
+        }
+      } catch {
+        if (errorText) {
+          errorMessage = errorText;
+        }
+      }
+
+      setError(errorMessage);
+      setLoading(false);
+      return;
     }
+
+    const newPhoto = await res.json();
+    const generatedImage = newPhoto?.generated ?? newPhoto?.[1];
+
+    if (typeof generatedImage === "string") {
+      setRestoredImage(generatedImage);
+      setError(null);
+    } else {
+      setError("Image generation failed");
+    }
+
     setTimeout(() => {
       setLoading(false);
     }, 1300);
@@ -204,9 +228,10 @@ export default function DreamPage() {
                     <Image
                       alt="original photo"
                       src={originalPhoto}
-                      className="rounded-2xl relative w-full h-96"
+                      className="rounded-2xl object-cover w-[475px] h-96"
                       width={475}
                       height={475}
+                      unoptimized
                     />
                   </div>
                   <div className="sm:mt-0 mt-8">
@@ -215,9 +240,10 @@ export default function DreamPage() {
                       <Image
                         alt="restored photo"
                         src={restoredImage}
-                        className="rounded-2xl relative sm:mt-0 mt-2 cursor-zoom-in w-full h-96"
+                        className="rounded-2xl object-cover sm:mt-0 mt-2 cursor-zoom-in w-[475px] h-96"
                         width={475}
                         height={475}
+                        unoptimized
                         onLoadingComplete={() => setRestoredLoaded(true)}
                       />
                     </a>
