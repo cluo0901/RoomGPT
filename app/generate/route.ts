@@ -3,6 +3,7 @@ import redis from "../../utils/redis";
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { buildPromptSections } from "../../utils/prompts";
+import { Buffer } from "node:buffer";
 export const runtime = "nodejs";
 
 type PromptSectionResult = ReturnType<typeof buildPromptSections>;
@@ -23,6 +24,78 @@ function resolveApproach(value?: string): GenerationApproach {
 
 function canUseOpenAI(): boolean {
   return Boolean(process.env.OPENAI_API_KEY);
+}
+
+const DEFAULT_OPENAI_SEED = 1337;
+
+function resolveOpenAISeed(): number | undefined {
+  const raw = process.env.OPENAI_IMAGE_SEED;
+  if (!raw) {
+    return DEFAULT_OPENAI_SEED;
+  }
+
+  const parsed = Number.parseInt(raw, 10);
+  if (Number.isFinite(parsed) && parsed >= 0) {
+    return parsed;
+  }
+
+  console.warn(
+    "OPENAI_IMAGE_SEED is invalid, falling back to default seed %d",
+    DEFAULT_OPENAI_SEED
+  );
+  return DEFAULT_OPENAI_SEED;
+}
+
+function inferExtension(mimeType: string): string {
+  const type = mimeType?.split(";")[0]?.toLowerCase();
+  switch (type) {
+    case "image/jpeg":
+      return "jpg";
+    case "image/webp":
+      return "webp";
+    case "image/png":
+    default:
+      return "png";
+  }
+}
+
+function dataUrlToBlob(dataUrl: string): { blob: Blob; filename: string } {
+  const match = dataUrl.match(/^data:(.+?);base64,(.+)$/);
+  if (!match) {
+    throw new Error("Invalid data URL provided as image source");
+  }
+
+  const [, mimeType, base64Payload] = match;
+  const buffer = Buffer.from(base64Payload, "base64");
+  const blob = new Blob([buffer], { type: mimeType });
+  return {
+    blob,
+    filename: `room-source.${inferExtension(mimeType)}`,
+  };
+}
+
+async function fetchImageAsBlob(
+  imageUrl: string
+): Promise<{ blob: Blob; filename: string }> {
+  if (imageUrl.startsWith("data:")) {
+    return dataUrlToBlob(imageUrl);
+  }
+
+  const response = await fetch(imageUrl);
+
+  if (!response.ok) {
+    throw new Error(
+      `Failed to download source image (${response.status} ${response.statusText})`
+    );
+  }
+
+  const contentType = response.headers.get("content-type") ?? "image/png";
+  const arrayBuffer = await response.arrayBuffer();
+  const blob = new Blob([arrayBuffer], { type: contentType });
+  return {
+    blob,
+    filename: `room-source.${inferExtension(contentType)}`,
+  };
 }
 
 // Create a new ratelimiter, that allows 5 requests per 24 hours
@@ -263,41 +336,63 @@ async function generateWithOpenAI(
   }
 
   const model = process.env.OPENAI_IMAGE_MODEL || "gpt-image-1";
+  const seed = resolveOpenAISeed();
+
+  let imageAsset: { blob: Blob; filename: string };
 
   try {
-    const openaiResponse = await fetch(
-      "https://api.openai.com/v1/images/generations",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-        },
-        body: JSON.stringify({
-          model,
-          prompt: promptSections.full,
-          size: "1024x1024",
-        }),
-      }
-    );
+    imageAsset = await fetchImageAsBlob(imageUrl);
+  } catch (error: any) {
+    console.error("Failed to prepare base image for OpenAI edits", error);
+    const message =
+      error?.message ?? "Unable to download base image for OpenAI edits";
+    return NextResponse.json({ error: message }, { status: 400 });
+  }
 
-    const openaiJson = await openaiResponse
-      .json()
-      .catch(() => ({ error: { message: "Invalid response from OpenAI" } }));
+  try {
+    const initialAttempt = await requestOpenAIImageEdit({
+      model,
+      prompt: promptSections.full,
+      seed,
+      imageAsset,
+      includeSeed: seed !== undefined,
+    });
 
-    if (!openaiResponse.ok) {
-      console.error("OpenAI API error", openaiJson);
+    let { response, json, appliedSeed } = initialAttempt;
+
+    if (
+      !response.ok &&
+      initialAttempt.includeSeed &&
+      typeof json?.error?.message === "string" &&
+      json.error.message.includes("Unknown parameter: 'seed'")
+    ) {
+      console.warn(
+        "OpenAI images edits does not currently accept 'seed'; retrying without it."
+      );
+      const retry = await requestOpenAIImageEdit({
+        model,
+        prompt: promptSections.full,
+        seed: undefined,
+        imageAsset,
+        includeSeed: false,
+      });
+      response = retry.response;
+      json = retry.json;
+      appliedSeed = retry.appliedSeed;
+    }
+
+    if (!response.ok) {
+      console.error("OpenAI API error", json);
       const errorMessage =
-        openaiJson?.error?.message ??
-        `Image generation failed (${openaiResponse.status})`;
+        json?.error?.message ?? `Image generation failed (${response.status})`;
       return NextResponse.json(
         { error: errorMessage },
-        { status: openaiResponse.status }
+        { status: response.status }
       );
     }
 
-    const imageBase64 = openaiJson?.data?.[0]?.b64_json;
-    const imageUrlFromApi = openaiJson?.data?.[0]?.url;
+    const imageBase64 = json?.data?.[0]?.b64_json;
+    const imageUrlFromApi = json?.data?.[0]?.url;
 
     if (!imageBase64 && !imageUrlFromApi) {
       return NextResponse.json(
@@ -316,10 +411,62 @@ async function generateWithOpenAI(
       prompt: promptSections,
       provider: "openai",
       model,
+      seed: appliedSeed,
     });
   } catch (error: any) {
     console.error("OpenAI image generation error", error);
     const message = error?.message ?? "Image generation failed";
     return NextResponse.json({ error: message }, { status: 500 });
   }
+}
+
+type OpenAIEditRequest = {
+  model: string;
+  prompt: string;
+  seed: number | undefined;
+  imageAsset: { blob: Blob; filename: string };
+  includeSeed: boolean;
+};
+
+type OpenAIEditResponse = {
+  response: Response;
+  json: any;
+  appliedSeed?: number;
+  includeSeed: boolean;
+};
+
+async function requestOpenAIImageEdit(
+  input: OpenAIEditRequest
+): Promise<OpenAIEditResponse> {
+  const formData = new FormData();
+  formData.append("model", input.model);
+  formData.append("prompt", input.prompt);
+  formData.append("size", "1024x1024");
+
+  let appliedSeed: number | undefined;
+  if (input.includeSeed && input.seed !== undefined) {
+    formData.append("seed", input.seed.toString());
+    appliedSeed = input.seed;
+  }
+
+  formData.append("image", input.imageAsset.blob, input.imageAsset.filename);
+
+  const response = await fetch("https://api.openai.com/v1/images/edits", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+    },
+    body: formData,
+  });
+
+  const json = await response
+    .json()
+    .catch(() => ({ error: { message: "Invalid response from OpenAI" } }));
+
+  return {
+    response,
+    json,
+    appliedSeed,
+    includeSeed: input.includeSeed,
+  };
 }

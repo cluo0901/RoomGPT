@@ -8,7 +8,7 @@ export type PromptSections = {
 };
 
 const GENERAL_PROMPT =
-  "Redesign this room while keeping the existing layout, architectural features, and proportions intact. Maintain windows, doors, and major structural elements while delivering a cohesive, realistic concept suitable for everyday use.";
+  "Redesign this room while keeping the existing layout, proportions, and architecture (windows, doors, fireplace, beams, shelving) intact. Do not move structural elements or alter built-ins; focus on finishes, furnishings, lighting, and décor to create a cohesive, realistic concept suitable for everyday use.";
 
 const ROOM_PROMPTS: Record<roomType, string> = {
   "Living Room":

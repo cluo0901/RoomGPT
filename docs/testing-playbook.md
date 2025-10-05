@@ -6,7 +6,7 @@ Start from clean terminal session:
 4. Upgrade pip and install ControlNet dependencies: `pip install --upgrade pip && pip install -r controlnet_service/requirements.txt`.
 5. (Optional) Pre-cache diffusion weights: `python controlnet_service/app.py`, interrupt with `Ctrl+C` once model downloads complete.
 6. Copy the sample env vars and edit values as needed: `cp .example.env .env` then open `.env`.
-7. Decide which generator to use by setting `DEFAULT_APPROACH` (`openai` is the default; switch to `controlnet` for the local pipeline).
+7. Decide which generator to use by setting `DEFAULT_APPROACH` (`openai` is the default; switch to `controlnet` for the local pipeline) and optionally set `OPENAI_IMAGE_SEED` for consistent results when the API supports it.
 8. Install Node dependencies (venv may remain active): `npm install`.
 
 Launch services for manual testing:

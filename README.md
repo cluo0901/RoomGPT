@@ -46,7 +46,7 @@ The service expects a CUDA GPU (≥12 GB VRAM recommended). It falls back to C
 
 ### Storing the API keys in .env
 
-Create a file in the project root (see `.example.env`) and store your configuration. The `DEFAULT_APPROACH` flag lets you choose between the hosted OpenAI flow and the local ControlNet pipeline.
+Create a file in the project root (see `.example.env`) and store your configuration. The `DEFAULT_APPROACH` flag lets you choose between the hosted OpenAI edits flow (anchors to your uploaded photo) and the local ControlNet pipeline.
 
 ```
 DEFAULT_APPROACH=openai
@@ -66,11 +66,12 @@ NEXT_PUBLIC_UPLOAD_API_KEY=optional-bytescale-key
 # Optional OpenAI keys (required when DEFAULT_APPROACH=openai)
 OPENAI_API_KEY=
 OPENAI_IMAGE_MODEL=gpt-image-1
+OPENAI_IMAGE_SEED=1337
 ```
 
 You can keep `OPENAI_API_KEY`/`OPENAI_IMAGE_MODEL` values if you plan to provide an OpenAI fallback, but they are not required for the ControlNet flow.
 
-Set `DEFAULT_APPROACH=controlnet` when you're ready to use the local SDXL ControlNet service instead.
+Set `DEFAULT_APPROACH=controlnet` when you're ready to use the local SDXL ControlNet service instead. The OpenAI approach uses the Images Edits endpoint, so it re-draws over your actual room photo; `OPENAI_IMAGE_SEED` is a best-effort knob (ignored if the API doesn't yet support it) to encourage repeatable results.
 
 If you'd also like to do rate limiting, create an account on UpStash, create a Redis database, and populate the two environment variables in `.env` as well. If you don't want to do rate limiting, you don't need to make any changes.
 
