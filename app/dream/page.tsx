@@ -16,6 +16,7 @@ import appendNewToName from "../../utils/appendNewToName";
 import downloadPhoto from "../../utils/downloadPhoto";
 import DropDown from "../../components/DropDown";
 import { roomType, rooms, themeType, themes } from "../../utils/dropdownTypes";
+import type { PromptSections } from "../../utils/prompts";
 
 const options: UploadWidgetConfig = {
   apiKey: !!process.env.NEXT_PUBLIC_UPLOAD_API_KEY
@@ -51,6 +52,9 @@ export default function DreamPage() {
   const [photoName, setPhotoName] = useState<string | null>(null);
   const [theme, setTheme] = useState<themeType>("Modern");
   const [room, setRoom] = useState<roomType>("Living Room");
+  const [promptSections, setPromptSections] = useState<PromptSections | null>(
+    null
+  );
 
   const UploadDropZone = () => (
     <UploadDropzone
@@ -81,6 +85,7 @@ export default function DreamPage() {
     await new Promise((resolve) => setTimeout(resolve, 200));
     setLoading(true);
     setRestoredLoaded(false);
+    setPromptSections(null);
     const res = await fetch("/generate", {
       method: "POST",
       headers: {
@@ -106,7 +111,7 @@ export default function DreamPage() {
       setError(errorMessage);
       setLoading(false);
       return;
-    }
+      }
 
     const newPhoto = await res.json();
     const generatedImage = newPhoto?.generated ?? newPhoto?.[1];
@@ -114,8 +119,10 @@ export default function DreamPage() {
     if (typeof generatedImage === "string") {
       setRestoredImage(generatedImage);
       setError(null);
+      setPromptSections(newPhoto?.prompt ?? null);
     } else {
       setError("Image generation failed");
+      setPromptSections(null);
     }
 
     setTimeout(() => {
@@ -276,6 +283,7 @@ export default function DreamPage() {
                       setRestoredImage(null);
                       setRestoredLoaded(false);
                       setError(null);
+                      setPromptSections(null);
                     }}
                     className="bg-blue-500 rounded-full text-white font-medium px-4 py-2 mt-8 hover:bg-blue-500/80 transition"
                   >
@@ -300,6 +308,39 @@ export default function DreamPage() {
           </AnimatePresence>
         </ResizablePanel>
       </main>
+      {promptSections && (
+        <section className="w-full max-w-4xl px-6 pb-12">
+          <div className="border border-gray-800 rounded-2xl bg-gray-900/60 p-6 text-left space-y-3">
+            <h3 className="text-lg font-semibold text-slate-100">
+              Prompt Breakdown
+            </h3>
+            <div>
+              <p className="text-sm uppercase tracking-wide text-gray-400">
+                General
+              </p>
+              <p className="text-gray-200 text-sm leading-6">
+                {promptSections.general}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm uppercase tracking-wide text-gray-400">
+                Room
+              </p>
+              <p className="text-gray-200 text-sm leading-6">
+                {promptSections.room}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm uppercase tracking-wide text-gray-400">
+                Style
+              </p>
+              <p className="text-gray-200 text-sm leading-6">
+                {promptSections.theme}
+              </p>
+            </div>
+          </div>
+        </section>
+      )}
       <Footer />
     </div>
   );
