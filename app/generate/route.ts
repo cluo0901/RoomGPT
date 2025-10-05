@@ -2,7 +2,7 @@ import { Ratelimit } from "@upstash/ratelimit";
 import redis from "../../utils/redis";
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
-import { buildPrompt } from "../../utils/prompts";
+import { buildPromptSections } from "../../utils/prompts";
 export const runtime = "nodejs";
 
 // Create a new ratelimiter, that allows 5 requests per 24 hours
@@ -48,7 +48,11 @@ export async function POST(request: Request) {
 
   try {
     const model = process.env.OPENAI_IMAGE_MODEL || "gpt-image-1";
-    const prompt = buildPrompt(room, theme);
+    const promptSections = buildPromptSections(room, theme);
+
+    if (process.env.NODE_ENV !== "production") {
+      console.log("Prompt sections", promptSections);
+    }
 
     const openaiResponse = await fetch(
       "https://api.openai.com/v1/images/generations",
@@ -60,7 +64,7 @@ export async function POST(request: Request) {
         },
         body: JSON.stringify({
           model,
-          prompt,
+          prompt: promptSections.full,
           size: "1024x1024",
         }),
       }
@@ -95,7 +99,11 @@ export async function POST(request: Request) {
       ? `data:image/png;base64,${imageBase64}`
       : imageUrlFromApi!;
 
-    return NextResponse.json({ original: imageUrl, generated: imageDataUrl });
+    return NextResponse.json({
+      original: imageUrl,
+      generated: imageDataUrl,
+      prompt: promptSections,
+    });
   } catch (error: any) {
     console.error("OpenAI image generation error", error);
     const message = error?.message ?? "Image generation failed";

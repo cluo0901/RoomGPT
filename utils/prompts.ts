@@ -1,54 +1,81 @@
 import { roomType, themeType } from "./dropdownTypes";
 
+export type PromptSections = {
+  general: string;
+  room: string;
+  theme: string;
+  full: string;
+};
+
 const GENERAL_PROMPT =
-  "Photorealistic interior render with practical layout, natural lighting, and cohesive decor. Maintain real-world proportions and believable materials.";
+  "Redesign this room while keeping the existing layout, architectural features, and proportions intact. Maintain windows, doors, and major structural elements while delivering a cohesive, realistic concept suitable for everyday use.";
 
 const ROOM_PROMPTS: Record<roomType, string> = {
   "Living Room":
-    "Focus on a comfortable living room arrangement with inviting seating, layered lighting, and balanced focal points.",
+    "Arrange inviting seating, a functional coffee table, layered lighting, and considered décor that encourages conversation.",
   "Dining Room":
-    "Highlight a welcoming dining space with a functional table setup, complementary chairs, and ambient lighting.",
+    "Highlight a welcoming dining setup with a practical table arrangement, complementary chairs, and ambient overhead lighting.",
   Bedroom:
-    "Present a relaxing bedroom retreat with a well-dressed bed, soft textures, and calming lighting accents.",
+    "Present a restful bedroom with a well-dressed bed, balanced bedside storage, calming lighting, and subtle decorative accents.",
   Bathroom:
-    "Showcase a spa-like bathroom with clean lines, premium fixtures, and organized storage.",
+    "Deliver a spa-like bathroom featuring premium fixtures, organized storage, flattering lighting, and clean finishes.",
   Office:
-    "Design a productive home office with ergonomic furniture, organized storage, and technology integration.",
+    "Design a productive home office with an ergonomic workstation, intentional storage, and technology neatly integrated.",
+  "Home Office":
+    "Curate a focused home office with a modern desk, ergonomic seating, clear organization, and minimal distractions.",
+  Kitchen:
+    "Feature streamlined cabinetry, efficient work zones, quality appliances, and purposeful lighting for cooking and gathering.",
   "Gaming Room":
-    "Deliver an immersive gaming room featuring performance hardware, ambient RGB lighting, and comfortable seating zones.",
+    "Create an immersive gaming space with performance hardware, comfortable seating zones, and atmospheric accent lighting.",
 };
 
 const THEME_PROMPTS: Record<themeType, string> = {
   Modern:
-    "Apply contemporary styling with sleek lines, neutral foundations, and high-contrast accents.",
+    "Use a contemporary palette with sleek lines, contrasting accents, and minimal clutter.",
   Vintage:
-    "Incorporate nostalgic elements, warm palettes, and characterful furnishings inspired by mid-century interiors.",
+    "Introduce nostalgic elements, warm tones, and characterful furnishings inspired by mid-century interiors.",
   Minimalist:
-    "Simplify the space with clean silhouettes, negative space, and a restrained color palette.",
+    "Focus on clean silhouettes, restrained color use, and purposeful negative space.",
   Professional:
-    "Emphasize sophisticated finishes, tailored furniture choices, and a composed, executive mood.",
+    "Incorporate tailored furniture, polished finishes, and a composed executive mood.",
   Tropical:
-    "Introduce breezy textures, botanical accents, and sunlit warmth reminiscent of coastal escapes.",
+    "Layer breezy textures, botanical accents, and sunlit warmth reminiscent of coastal escapes.",
+  Scandinavian:
+    "Blend pale woods, light neutrals, and cozy textiles to achieve a calm, functional hygge feel.",
+  Industrial:
+    "Reference exposed structure, metal accents, and moody tones balanced with warm lighting.",
+  Japandi:
+    "Merge Japanese minimalism with Scandinavian comfort using natural materials, low silhouettes, and muted earthy hues.",
+  "Luxury Modern":
+    "Highlight upscale finishes, statement lighting, and refined textures for a polished, high-end impression.",
 };
 
 const DEFAULT_ROOM: roomType = "Living Room";
 const DEFAULT_THEME: themeType = "Modern";
 
-export function buildPrompt(roomInput: string, themeInput: string): string {
-  const room = (Object.keys(ROOM_PROMPTS) as roomType[]).includes(
-    roomInput as roomType
-  )
+export function buildPromptSections(
+  roomInput: string,
+  themeInput: string
+): PromptSections {
+  const knownRooms = Object.keys(ROOM_PROMPTS) as roomType[];
+  const knownThemes = Object.keys(THEME_PROMPTS) as themeType[];
+
+  const room = knownRooms.includes(roomInput as roomType)
     ? (roomInput as roomType)
     : DEFAULT_ROOM;
 
-  const theme = (Object.keys(THEME_PROMPTS) as themeType[]).includes(
-    themeInput as themeType
-  )
+  const theme = knownThemes.includes(themeInput as themeType)
     ? (themeInput as themeType)
     : DEFAULT_THEME;
 
-  const roomDetails = ROOM_PROMPTS[room];
-  const themeDetails = THEME_PROMPTS[theme];
+  const sections = {
+    general: GENERAL_PROMPT,
+    room: ROOM_PROMPTS[room],
+    theme: THEME_PROMPTS[theme],
+  };
 
-  return `${GENERAL_PROMPT} ${roomDetails} ${themeDetails}`;
+  return {
+    ...sections,
+    full: `General: ${sections.general}\nRoom: ${sections.room}\nStyle: ${sections.theme}`,
+  };
 }
