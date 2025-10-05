@@ -3,7 +3,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "control:dev": "uvicorn controlnet_service.app:app --reload"
   },
   "dependencies": {
     "@bytescale/upload-widget-react": "^4.9.0",

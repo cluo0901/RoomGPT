@@ -8,7 +8,7 @@ This is the previous and open source version of RoomGPT.io (a paid SaaS product)
 
 ## How it works
 
-On this branch the app uses the [OpenAI Images](https://platform.openai.com/docs/guides/images) API to generate room redesign concepts. Your prompt combines general design guidance with room- and style-specific details. [Bytescale](https://www.bytescale.com/) is used for image storage.
+This branch pairs the Next.js web app with a standalone SDXL + ControlNet service. The frontend collects your room photo, builds a structured prompt (general + room + style), and calls the local FastAPI microservice. The service runs Stable Diffusion XL with a Canny ControlNet to keep the room layout while restyling. [Bytescale](https://www.bytescale.com/) is used for image storage.
 
 ## Running Locally
 
@@ -18,24 +18,52 @@ On this branch the app uses the [OpenAI Images](https://platform.openai.com/docs
 git clone https://github.com/Nutlope/roomGPT
 ```
 
-### Getting an OpenAI API key
+### Setting up the ControlNet service
 
-1. Go to [OpenAI](https://platform.openai.com/) and log into your account.
-2. Navigate to **API Keys** and create a new secret key.
-3. Copy the key (it starts with `sk-` or `sk-proj-`).
+1. Create a Python virtual environment:
+
+   ```bash
+   python -m venv .venv
+   source .venv/bin/activate
+   pip install --upgrade pip
+   pip install -r controlnet_service/requirements.txt
+   ```
+
+2. (Optional) Pre-download model weights so the first request is faster:
+
+   ```bash
+   python controlnet_service/app.py  # first run triggers model downloads
+   ^C after you see the models cached
+   ```
+
+3. Launch the service (default port 8000):
+
+   ```bash
+   uvicorn controlnet_service.app:app --host 0.0.0.0 --port 8000
+   ```
+
+The service expects a CUDA GPU (≥12 GB VRAM recommended). It falls back to CPU/MPS, but generations will be slow.
 
 ### Storing the API keys in .env
 
-Create a file in root directory of project with env. And store your API key in it, as shown in the .example.env file.
+Create a file in root directory of project with env. And store your configuration in it, as shown in the `.example.env` file.
 
 ```
-OPENAI_API_KEY=your-openai-key
-OPENAI_IMAGE_MODEL=gpt-image-1
+CONTROL_SERVICE_URL=http://localhost:8000
+CONTROL_SERVICE_ENDPOINT=/generate
+CONTROL_SERVICE_TOKEN=optional-token
+CONTROL_DEFAULT_NEGATIVE_PROMPT=low quality, blurry, distorted, extra furniture, warped walls, overexposed
+CONTROL_DEFAULT_STRENGTH=0.35
+CONTROL_DEFAULT_GUIDANCE=6
+CONTROL_DEFAULT_INFERENCE_STEPS=30
+CONTROL_CANNY_CONDITIONING_SCALE=0.75
+CONTROL_CANNY_LOW_THRESHOLD=100
+CONTROL_CANNY_HIGH_THRESHOLD=200
 
 NEXT_PUBLIC_UPLOAD_API_KEY=optional-bytescale-key
 ```
 
-If your organization does not yet have access to `gpt-image-1`, either complete the verification steps in the OpenAI dashboard or switch `OPENAI_IMAGE_MODEL` to another image-capable model (for example `dall-e-2`).
+You can keep `OPENAI_API_KEY`/`OPENAI_IMAGE_MODEL` values if you plan to provide an OpenAI fallback, but they are not required for the ControlNet flow.
 
 If you'd also like to do rate limiting, create an account on UpStash, create a Redis database, and populate the two environment variables in `.env` as well. If you don't want to do rate limiting, you don't need to make any changes.
 
@@ -47,10 +75,11 @@ npm install
 
 ### Running the application.
 
-Then, run the application in the command line and it will be available at `http://localhost:3000`.
+Start the ControlNet service (in a separate terminal) and the Next.js dev server:
 
 ```bash
-npm run dev
+npm run control:dev   # starts the SDXL ControlNet API (requires Python env)
+npm run dev           # starts the Next.js frontend
 ```
 
 ## One-Click Deploy

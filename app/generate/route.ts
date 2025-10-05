@@ -38,8 +38,8 @@ export async function POST(request: Request) {
 
   const { imageUrl, theme, room } = await request.json();
 
-  if (!process.env.OPENAI_API_KEY) {
-    return new Response("Missing OPENAI_API_KEY", { status: 500 });
+  if (!process.env.CONTROL_SERVICE_URL) {
+    return new Response("Missing CONTROL_SERVICE_URL", { status: 500 });
   }
 
   if (!imageUrl || !theme || !room) {
@@ -53,60 +53,136 @@ export async function POST(request: Request) {
       console.log("Prompt sections", promptSections);
     }
 
-    const model = process.env.OPENAI_IMAGE_MODEL || "gpt-image-1";
-
-    const openaiResponse = await fetch(
-      "https://api.openai.com/v1/images/generations",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-        },
-        body: JSON.stringify({
-          model,
-          prompt: promptSections.full,
-          size: "1024x1024",
-        }),
-      }
+    const serviceUrl = process.env.CONTROL_SERVICE_URL;
+    const endpoint = new URL(
+      process.env.CONTROL_SERVICE_ENDPOINT ?? "/generate",
+      serviceUrl
     );
 
-    const openaiJson = await openaiResponse
-      .json()
-      .catch(() => ({ error: { message: "Invalid response from OpenAI" } }));
+    const defaultNegative =
+      process.env.CONTROL_DEFAULT_NEGATIVE_PROMPT ??
+      "low quality, blurry, distorted, extra furniture, warped walls, overexposed";
+    const fallbackNumber = (value: number, defaultValue: number) =>
+      Number.isFinite(value) ? value : defaultValue;
 
-    if (!openaiResponse.ok) {
-      console.error("OpenAI API error", openaiJson);
+    const strength = fallbackNumber(
+      parseFloat(process.env.CONTROL_DEFAULT_STRENGTH ?? "0.35"),
+      0.35
+    );
+    const guidance = fallbackNumber(
+      parseFloat(process.env.CONTROL_DEFAULT_GUIDANCE ?? "6"),
+      6
+    );
+    const inferenceSteps = Math.max(
+      1,
+      Math.round(
+        fallbackNumber(
+          parseInt(process.env.CONTROL_DEFAULT_INFERENCE_STEPS ?? "30", 10),
+          30
+        )
+      )
+    );
+    const cannyScale = fallbackNumber(
+      parseFloat(process.env.CONTROL_CANNY_CONDITIONING_SCALE ?? "0.75"),
+      0.75
+    );
+    const cannyLow = Math.max(
+      0,
+      Math.round(
+        fallbackNumber(
+          parseInt(process.env.CONTROL_CANNY_LOW_THRESHOLD ?? "100", 10),
+          100
+        )
+      )
+    );
+    const cannyHigh = Math.max(
+      0,
+      Math.round(
+        fallbackNumber(
+          parseInt(process.env.CONTROL_CANNY_HIGH_THRESHOLD ?? "200", 10),
+          200
+        )
+      )
+    );
+
+    const payload = {
+      image_url: imageUrl,
+      prompt_sections: promptSections,
+      negative_prompt: defaultNegative,
+      strength,
+      guidance_scale: guidance,
+      num_inference_steps: inferenceSteps,
+      controlnets: [
+        {
+          type: "canny",
+          conditioning_scale: cannyScale,
+          low_threshold: cannyLow,
+          high_threshold: cannyHigh,
+        },
+      ],
+    };
+
+    const headersInit: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+
+    if (process.env.CONTROL_SERVICE_TOKEN) {
+      headersInit["Authorization"] = `Bearer ${process.env.CONTROL_SERVICE_TOKEN}`;
+    }
+
+    const controlResponse = await fetch(endpoint.toString(), {
+      method: "POST",
+      headers: headersInit,
+      body: JSON.stringify(payload),
+    }).catch((error: any) => {
+      console.error("ControlNet service request failed", error);
+      throw new Error("Failed to reach ControlNet service");
+    });
+
+    const responseJson = await controlResponse
+      .json()
+      .catch(() => ({ error: "Invalid response from ControlNet service" }));
+
+    if (!controlResponse.ok) {
+      console.error("ControlNet service error", responseJson);
       const errorMessage =
-        openaiJson?.error?.message ??
-        `Image generation failed (${openaiResponse.status})`;
+        typeof responseJson?.error === "string"
+          ? responseJson.error
+          : `Generation failed (${controlResponse.status})`;
       return NextResponse.json(
         { error: errorMessage },
-        { status: openaiResponse.status }
+        { status: controlResponse.status }
       );
     }
 
-    const imageBase64 = openaiJson?.data?.[0]?.b64_json;
-    const imageUrlFromApi = openaiJson?.data?.[0]?.url;
+    const generatedImage =
+      responseJson?.generated ??
+      responseJson?.image ??
+      responseJson?.data ??
+      null;
 
-    if (!imageBase64 && !imageUrlFromApi) {
+    if (!generatedImage) {
       return NextResponse.json(
-        { error: "Failed to generate image" },
+        { error: "ControlNet service returned no image" },
         { status: 500 }
       );
     }
 
-    const imageDataUrl = imageBase64
-      ? `data:image/png;base64,${imageBase64}`
-      : imageUrlFromApi!;
-
     return NextResponse.json({
       original: imageUrl,
-      generated: imageDataUrl,
-      prompt: promptSections,
+      generated: generatedImage,
+      prompt: responseJson?.prompt ?? promptSections,
+      seed: responseJson?.seed,
+      strength: responseJson?.strength,
+      guidanceScale: responseJson?.guidance_scale ?? responseJson?.guidanceScale,
+      numInferenceSteps:
+        responseJson?.num_inference_steps ?? responseJson?.numInferenceSteps,
+      controlnets: responseJson?.controlnets,
+      inferenceSeconds:
+        responseJson?.inference_seconds ?? responseJson?.inferenceSeconds,
     });
   } catch (error: any) {
-    console.error("OpenAI image generation error", error);
+    console.error("ControlNet image generation error", error);
     const message = error?.message ?? "Image generation failed";
     return NextResponse.json({ error: message }, { status: 500 });
   }

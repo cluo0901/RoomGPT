@@ -18,6 +18,20 @@ import DropDown from "../../components/DropDown";
 import { roomType, rooms, themeType, themes } from "../../utils/dropdownTypes";
 import type { PromptSections } from "../../utils/prompts";
 
+type GenerationMeta = {
+  seed?: number;
+  strength?: number;
+  guidanceScale?: number;
+  numInferenceSteps?: number;
+  inferenceSeconds?: number;
+  controlnets?: Array<{
+    type?: string;
+    conditioning_scale?: number;
+    low_threshold?: number;
+    high_threshold?: number;
+  }>;
+};
+
 const options: UploadWidgetConfig = {
   apiKey: !!process.env.NEXT_PUBLIC_UPLOAD_API_KEY
       ? process.env.NEXT_PUBLIC_UPLOAD_API_KEY
@@ -55,6 +69,27 @@ export default function DreamPage() {
   const [promptSections, setPromptSections] = useState<PromptSections | null>(
     null
   );
+  const [generationMeta, setGenerationMeta] = useState<GenerationMeta | null>(
+    null
+  );
+
+  const formatFloat = (value?: number) =>
+    typeof value === "number" && !Number.isNaN(value)
+      ? value.toFixed(2)
+      : "n/a";
+
+  const toNumberOrUndefined = (value: unknown): number | undefined => {
+    if (typeof value === "number" && !Number.isNaN(value)) {
+      return value;
+    }
+    if (typeof value === "string" && value.trim() !== "") {
+      const parsed = Number(value);
+      if (!Number.isNaN(parsed)) {
+        return parsed;
+      }
+    }
+    return undefined;
+  };
 
   const UploadDropZone = () => (
     <UploadDropzone
@@ -86,6 +121,7 @@ export default function DreamPage() {
     setLoading(true);
     setRestoredLoaded(false);
     setPromptSections(null);
+    setGenerationMeta(null);
     const res = await fetch("/generate", {
       method: "POST",
       headers: {
@@ -114,15 +150,44 @@ export default function DreamPage() {
       }
 
     const newPhoto = await res.json();
-    const generatedImage = newPhoto?.generated ?? newPhoto?.[1];
+    const generatedImage =
+      newPhoto?.generated ?? newPhoto?.image ?? newPhoto?.[1];
 
     if (typeof generatedImage === "string") {
       setRestoredImage(generatedImage);
       setError(null);
       setPromptSections(newPhoto?.prompt ?? null);
+      const strengthValue = toNumberOrUndefined(newPhoto?.strength);
+      const guidanceValue = toNumberOrUndefined(
+        newPhoto?.guidanceScale ?? newPhoto?.guidance_scale
+      );
+      const inferenceSecondsValue = toNumberOrUndefined(
+        newPhoto?.inferenceSeconds ?? newPhoto?.inference_seconds
+      );
+      const stepsValueRaw =
+        typeof newPhoto?.numInferenceSteps === "number"
+          ? newPhoto.numInferenceSteps
+          : typeof newPhoto?.num_inference_steps === "number"
+          ? newPhoto.num_inference_steps
+          : toNumberOrUndefined(
+              newPhoto?.numInferenceSteps ?? newPhoto?.num_inference_steps
+            );
+      const stepsValue =
+        typeof stepsValueRaw === "number"
+          ? Math.round(stepsValueRaw)
+          : undefined;
+      setGenerationMeta({
+        seed: newPhoto?.seed,
+        strength: strengthValue,
+        guidanceScale: guidanceValue,
+        numInferenceSteps: stepsValue,
+        inferenceSeconds: inferenceSecondsValue,
+        controlnets: newPhoto?.controlnets ?? undefined,
+      });
     } else {
       setError("Image generation failed");
       setPromptSections(null);
+      setGenerationMeta(null);
     }
 
     setTimeout(() => {
@@ -283,6 +348,7 @@ export default function DreamPage() {
                       setRestoredImage(null);
                       setRestoredLoaded(false);
                       setError(null);
+                      setGenerationMeta(null);
                       setPromptSections(null);
                     }}
                     className="bg-blue-500 rounded-full text-white font-medium px-4 py-2 mt-8 hover:bg-blue-500/80 transition"
@@ -338,6 +404,59 @@ export default function DreamPage() {
                 {promptSections.theme}
               </p>
             </div>
+            {generationMeta && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 text-gray-300 text-sm">
+                <div className="rounded-xl border border-gray-800 bg-gray-900/50 p-4 space-y-1">
+                  <p className="uppercase tracking-wide text-[11px] text-gray-400">
+                    Sampling
+                  </p>
+                  <p>Seed: {generationMeta.seed ?? "Random"}</p>
+                  <p>
+                    Strength: {formatFloat(generationMeta.strength)}
+                  </p>
+                  <p>
+                    Guidance: {formatFloat(generationMeta.guidanceScale)}
+                  </p>
+                  <p>
+                    Steps: {generationMeta.numInferenceSteps ?? "n/a"}
+                  </p>
+                  {typeof generationMeta.inferenceSeconds === "number" && (
+                    <p>
+                      Time: {generationMeta.inferenceSeconds.toFixed(1)}s
+                    </p>
+                  )}
+                </div>
+                {generationMeta.controlnets && (
+                  <div className="rounded-xl border border-gray-800 bg-gray-900/50 p-4 space-y-1">
+                    <p className="uppercase tracking-wide text-[11px] text-gray-400">
+                      ControlNet
+                    </p>
+                    {generationMeta.controlnets.map((item, index) => {
+                      const conditioningScale =
+                        typeof item.conditioning_scale === "number"
+                          ? item.conditioning_scale
+                          : Number(item.conditioning_scale);
+
+                      return (
+                        <div key={`${item.type}-${index}`} className="space-y-0.5">
+                          <p>Type: {item.type ?? "canny"}</p>
+                          {item.conditioning_scale !== undefined && (
+                            <p>Scale: {formatFloat(conditioningScale)}</p>
+                          )}
+                          {(item.low_threshold !== undefined ||
+                            item.high_threshold !== undefined) && (
+                            <p>
+                              Thresholds: {item.low_threshold ?? "?"}/
+                              {item.high_threshold ?? "?"}
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </section>
       )}
