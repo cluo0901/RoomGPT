@@ -38,8 +38,8 @@ export async function POST(request: Request) {
 
   const { imageUrl, theme, room } = await request.json();
 
-  if (!process.env.REPLICATE_API_KEY) {
-    return new Response("Missing REPLICATE_API_KEY", { status: 500 });
+  if (!process.env.OPENAI_API_KEY) {
+    return new Response("Missing OPENAI_API_KEY", { status: 500 });
   }
 
   if (!imageUrl || !theme || !room) {
@@ -53,146 +53,60 @@ export async function POST(request: Request) {
       console.log("Prompt sections", promptSections);
     }
 
-    const modelVersion = process.env.SDXL_CONTROLNET_MODEL_VERSION;
+    const model = process.env.OPENAI_IMAGE_MODEL || "gpt-image-1";
 
-    if (!modelVersion) {
-      return NextResponse.json(
-        {
-          error:
-            "Missing SDXL_CONTROLNET_MODEL_VERSION. Set it to the version hash of the ControlNet model you want to use.",
-        },
-        { status: 500 }
-      );
-    }
-
-    const guidanceScale = parseFloat(
-      process.env.SDXL_GUIDANCE_SCALE ?? "7"
-    );
-    const controlnetScale = parseFloat(
-      process.env.SDXL_CONTROLNET_SCALE ?? "0.8"
-    );
-    const inferenceSteps = parseInt(
-      process.env.SDXL_INFERENCE_STEPS ?? "30",
-      10
-    );
-    const scheduler = process.env.SDXL_SCHEDULER ?? "Heun";
-    const negativePrompt =
-      process.env.SDXL_NEGATIVE_PROMPT ??
-      "low quality, artifacts, distorted, blurry, deformed, oversaturated";
-
-    const replicateHeaders = {
-      "Content-Type": "application/json",
-      Authorization: `Token ${process.env.REPLICATE_API_KEY}`,
-    };
-
-    const startResponse = await fetch(
-      "https://api.replicate.com/v1/predictions",
+    const openaiResponse = await fetch(
+      "https://api.openai.com/v1/images/generations",
       {
         method: "POST",
-        headers: replicateHeaders,
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+        },
         body: JSON.stringify({
-          version: modelVersion,
-          input: {
-            image: imageUrl,
-            prompt: promptSections.full,
-            negative_prompt: negativePrompt,
-            scheduler,
-            guidance_scale: guidanceScale,
-            controlnet_conditioning_scale: controlnetScale,
-            num_inference_steps: inferenceSteps,
-          },
+          model,
+          prompt: promptSections.full,
+          size: "1024x1024",
         }),
       }
     );
 
-    const startJson = await startResponse.json();
+    const openaiJson = await openaiResponse
+      .json()
+      .catch(() => ({ error: { message: "Invalid response from OpenAI" } }));
 
-    if (!startResponse.ok) {
-      console.error("Replicate start error", startJson);
+    if (!openaiResponse.ok) {
+      console.error("OpenAI API error", openaiJson);
+      const errorMessage =
+        openaiJson?.error?.message ??
+        `Image generation failed (${openaiResponse.status})`;
       return NextResponse.json(
-        { error: startJson?.error ?? "Failed to start ControlNet prediction" },
-        { status: startResponse.status }
+        { error: errorMessage },
+        { status: openaiResponse.status }
       );
     }
 
-    const endpointUrl = startJson?.urls?.get;
+    const imageBase64 = openaiJson?.data?.[0]?.b64_json;
+    const imageUrlFromApi = openaiJson?.data?.[0]?.url;
 
-    if (!endpointUrl) {
-      console.error("Missing polling URL", startJson);
+    if (!imageBase64 && !imageUrlFromApi) {
       return NextResponse.json(
-        { error: "Replicate response missing polling URL" },
+        { error: "Failed to generate image" },
         { status: 500 }
       );
     }
 
-    const timeoutMs = 1000 * 60 * 5; // 5 minutes
-    const pollIntervalMs = 2000;
-    const startTime = Date.now();
-
-    let finalJson: any = null;
-
-    while (Date.now() - startTime < timeoutMs) {
-      const finalResponse = await fetch(endpointUrl, {
-        headers: replicateHeaders,
-      });
-      finalJson = await finalResponse.json();
-
-      if (finalResponse.status >= 400) {
-        console.error("Replicate polling error", finalJson);
-        return NextResponse.json(
-          { error: finalJson?.error ?? "Failed while polling prediction" },
-          { status: finalResponse.status }
-        );
-      }
-
-      if (finalJson?.status === "succeeded") {
-        break;
-      }
-
-      if (finalJson?.status === "failed" || finalJson?.status === "canceled") {
-        console.error("Replicate prediction failed", finalJson);
-        return NextResponse.json(
-          { error: finalJson?.error ?? "Prediction failed" },
-          { status: 500 }
-        );
-      }
-
-      await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
-    }
-
-    if (!finalJson || finalJson?.status !== "succeeded") {
-      console.error("Replicate prediction timeout", finalJson);
-      return NextResponse.json(
-        { error: "Prediction timed out" },
-        { status: 504 }
-      );
-    }
-
-    const output = finalJson.output;
-    const generatedImage = Array.isArray(output)
-      ? output[output.length - 1]
-      : output;
-
-    if (typeof generatedImage !== "string") {
-      console.error("Unexpected output format", finalJson);
-      return NextResponse.json(
-        { error: "Unexpected output format from ControlNet" },
-        { status: 500 }
-      );
-    }
+    const imageDataUrl = imageBase64
+      ? `data:image/png;base64,${imageBase64}`
+      : imageUrlFromApi!;
 
     return NextResponse.json({
       original: imageUrl,
-      generated: generatedImage,
+      generated: imageDataUrl,
       prompt: promptSections,
-      prediction: {
-        id: startJson?.id,
-        modelVersion,
-        status: finalJson?.status,
-      },
     });
   } catch (error: any) {
-    console.error("ControlNet generation error", error);
+    console.error("OpenAI image generation error", error);
     const message = error?.message ?? "Image generation failed";
     return NextResponse.json({ error: message }, { status: 500 });
   }
