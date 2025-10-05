@@ -46,9 +46,10 @@ The service expects a CUDA GPU (≥12 GB VRAM recommended). It falls back to C
 
 ### Storing the API keys in .env
 
-Create a file in root directory of project with env. And store your configuration in it, as shown in the `.example.env` file.
+Create a file in the project root (see `.example.env`) and store your configuration. The `DEFAULT_APPROACH` flag lets you choose between the hosted OpenAI flow and the local ControlNet pipeline.
 
 ```
+DEFAULT_APPROACH=openai
 CONTROL_SERVICE_URL=http://localhost:8000
 CONTROL_SERVICE_ENDPOINT=/generate
 CONTROL_SERVICE_TOKEN=optional-token
@@ -61,9 +62,15 @@ CONTROL_CANNY_LOW_THRESHOLD=100
 CONTROL_CANNY_HIGH_THRESHOLD=200
 
 NEXT_PUBLIC_UPLOAD_API_KEY=optional-bytescale-key
+
+# Optional OpenAI keys (required when DEFAULT_APPROACH=openai)
+OPENAI_API_KEY=
+OPENAI_IMAGE_MODEL=gpt-image-1
 ```
 
 You can keep `OPENAI_API_KEY`/`OPENAI_IMAGE_MODEL` values if you plan to provide an OpenAI fallback, but they are not required for the ControlNet flow.
+
+Set `DEFAULT_APPROACH=controlnet` when you're ready to use the local SDXL ControlNet service instead.
 
 If you'd also like to do rate limiting, create an account on UpStash, create a Redis database, and populate the two environment variables in `.env` as well. If you don't want to do rate limiting, you don't need to make any changes.
 
