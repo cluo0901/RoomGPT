@@ -1,38 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { copy } from "../../content/copy";
 
-const PLAN_OPTIONS: Array<{
-  key: "pay_per_use" | "bundle_10" | "bundle_25" | "subscription_unlimited";
-  title: string;
-  blurb: string;
-  priceHint: string;
-}> = [
-  {
-    key: "pay_per_use",
-    title: "Single generation",
-    blurb: "Perfect for one-off redesigns. Pay only when you generate.",
-    priceHint: "Charged per request",
-  },
-  {
-    key: "bundle_10",
-    title: "10-credit bundle",
-    blurb: "Buy 10 generations upfront at a discounted rate.",
-    priceHint: "One-time bundle",
-  },
-  {
-    key: "bundle_25",
-    title: "25-credit bundle",
-    blurb: "Bulk credits for power users and teams.",
-    priceHint: "Best value bundle",
-  },
-  {
-    key: "subscription_unlimited",
-    title: "Unlimited monthly",
-    blurb: "Unlimited generations with fair-use protections. Billed monthly.",
-    priceHint: "Recurring subscription",
-  },
-];
+const purchaseCopy = copy.dashboard.purchaseButtons;
+const PLAN_OPTIONS = purchaseCopy.options;
 
 export default function PurchaseButtons({
   isSubscriptionActive,
@@ -54,7 +26,7 @@ export default function PurchaseButtons({
 
       const payload = await response.json();
       if (!response.ok || !payload?.url) {
-        setError(payload?.error ?? "Unable to start checkout. Try again.");
+        setError(payload?.error ?? purchaseCopy.error);
         setLoadingKey(null);
         return;
       }
@@ -62,7 +34,7 @@ export default function PurchaseButtons({
       window.location.href = payload.url as string;
     } catch (err) {
       console.error("Checkout error", err);
-      setError("Network error. Please try again.");
+      setError(purchaseCopy.networkError);
       setLoadingKey(null);
     }
   };
@@ -92,10 +64,10 @@ export default function PurchaseButtons({
               </h3>
               <p className="mt-2 text-sm text-slate-300">{option.blurb}</p>
               <p className="mt-4 text-xs uppercase tracking-wide text-slate-500">
-                {option.priceHint}
+                {option.hint}
               </p>
               <span className="mt-5 inline-flex rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold text-slate-100">
-                {loadingKey === option.key ? "Redirecting…" : "Checkout"}
+                {loadingKey === option.key ? purchaseCopy.buttonLoading : purchaseCopy.buttonIdle}
               </span>
             </button>
           );

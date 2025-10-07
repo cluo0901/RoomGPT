@@ -3,11 +3,13 @@
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
+import { copy } from "../../../content/copy";
 
+const authCopy = copy.auth.signInPage;
 const providerLabels: Record<string, string> = {
-  github: "Continue with GitHub",
-  google: "Continue with Google",
-  email: "Send magic link",
+  github: authCopy.github,
+  google: authCopy.google,
+  email: authCopy.magicLink,
 };
 
 type OAuthProvider = { id: string };
@@ -74,7 +76,7 @@ function EmailAuthForm({ callbackUrl }: { callbackUrl: string }) {
     const name = formData.get("name")?.toString().trim() ?? undefined;
 
     if (!email || !password) {
-      setError("Email and password are required.");
+      setError(authCopy.errorRequired);
       setPending(false);
       return;
     }
@@ -88,11 +90,11 @@ function EmailAuthForm({ callbackUrl }: { callbackUrl: string }) {
         });
         const payload = await response.json();
         if (!response.ok) {
-          setError(payload?.error ?? "Failed to create account.");
+          setError(payload?.error ?? authCopy.errors.default);
           setPending(false);
           return;
         }
-        setSuccess("Account created. Signing you in...");
+        setSuccess(authCopy.success);
       }
 
       const result = await signIn("credentials", {
@@ -103,7 +105,7 @@ function EmailAuthForm({ callbackUrl }: { callbackUrl: string }) {
       });
 
       if (result?.error) {
-        setError("Invalid email or password.");
+        setError(authCopy.errorInvalid);
         setPending(false);
         return;
       }
@@ -112,7 +114,7 @@ function EmailAuthForm({ callbackUrl }: { callbackUrl: string }) {
       router.refresh();
     } catch (err) {
       console.error("Email auth error", err);
-      setError("Unexpected error. Please try again.");
+      setError(authCopy.errorUnexpected);
       setPending(false);
     }
   };
@@ -121,16 +123,14 @@ function EmailAuthForm({ callbackUrl }: { callbackUrl: string }) {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-semibold text-slate-100">
-          {mode === "signin" ? "Sign in with email" : "Create an account"}
+          {mode === "signin" ? authCopy.emailTitleSignIn : authCopy.emailTitleSignUp}
         </h2>
         <button
           type="button"
           onClick={toggleMode}
           className="text-xs font-medium text-emerald-300 transition hover:text-emerald-100"
         >
-          {mode === "signin"
-            ? "Need an account? Sign up"
-            : "Have an account? Sign in"}
+          {mode === "signin" ? authCopy.toggleToSignUp : authCopy.toggleToSignIn}
         </button>
       </div>
 
@@ -138,7 +138,7 @@ function EmailAuthForm({ callbackUrl }: { callbackUrl: string }) {
         {mode === "signup" ? (
           <div className="space-y-1">
             <label className="block text-xs uppercase tracking-wide text-slate-400">
-              Name (optional)
+              {authCopy.nameLabel}
             </label>
             <input
               name="name"
@@ -151,7 +151,7 @@ function EmailAuthForm({ callbackUrl }: { callbackUrl: string }) {
 
         <div className="space-y-1">
           <label className="block text-xs uppercase tracking-wide text-slate-400">
-            Email
+            {authCopy.emailLabel}
           </label>
           <input
             name="email"
@@ -164,7 +164,7 @@ function EmailAuthForm({ callbackUrl }: { callbackUrl: string }) {
 
         <div className="space-y-1">
           <label className="block text-xs uppercase tracking-wide text-slate-400">
-            Password
+            {authCopy.passwordLabel}
           </label>
           <input
             name="password"
@@ -194,10 +194,10 @@ function EmailAuthForm({ callbackUrl }: { callbackUrl: string }) {
           className="w-full rounded-full bg-emerald-400 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-70"
         >
           {pending
-            ? "Processing..."
+            ? authCopy.processing
             : mode === "signin"
-            ? "Sign in with email"
-            : "Create account"}
+            ? authCopy.submitSignIn
+            : authCopy.submitSignUp}
         </button>
       </form>
     </div>

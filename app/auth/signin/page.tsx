@@ -3,13 +3,10 @@ import Footer from "../../../components/Footer";
 import Header from "../../../components/Header";
 import { getAuthSession } from "../../../auth";
 import SignInProviders from "./SignInProviders";
+import { copy } from "../../../content/copy";
 
-const ERROR_MESSAGES: Record<string, string> = {
-  OAuthAccountNotLinked:
-    "That email is already linked to another login method. Try signing in with the provider you used previously or create a password for email login.",
-  CredentialsSignin: "Invalid email or password. Please try again.",
-  Callback: "We couldn't complete the login flow. Try again or use a different method.",
-};
+const authCopy = copy.auth.signInPage;
+const ERROR_MESSAGES: Record<string, string> = authCopy.errors;
 
 export default async function SignInPage({
   searchParams,
@@ -37,7 +34,7 @@ export default async function SignInPage({
       ? resolvedParams.error
       : undefined;
   const errorMessage = rawError
-    ? ERROR_MESSAGES[rawError] ?? "Sign-in failed. Please try again."
+    ? ERROR_MESSAGES[rawError] ?? authCopy.errors.default
     : null;
 
   const oauthProviders: Array<{ id: string }> = [];
@@ -60,18 +57,18 @@ export default async function SignInPage({
       <main className="mx-auto flex w-full max-w-5xl flex-col items-center gap-10 px-4 pb-24 pt-24 sm:px-6">
         <div className="space-y-4 text-center">
           <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-emerald-300">
-            Welcome back
+            {authCopy.badge ?? "Welcome back"}
           </span>
           <h1 className="text-4xl font-semibold tracking-tight text-white sm:text-5xl">
-            Sign in to continue exploring RoomGPT
+            {authCopy.title}
           </h1>
           <p className="mx-auto max-w-xl text-sm text-slate-300 sm:text-base">
-            Access your saved generations, manage credits, and remix your rooms from any device.
+            {authCopy.subtitle}
           </p>
         </div>
         <div className="w-full max-w-lg space-y-6 rounded-3xl border border-white/10 bg-white/5 p-8 shadow-2xl backdrop-blur">
           <h2 className="text-lg font-semibold text-white text-center">
-            Choose how you’d like to sign in
+            {authCopy.chooseMethod}
           </h2>
           <SignInProviders
             oauthProviders={oauthProviders}

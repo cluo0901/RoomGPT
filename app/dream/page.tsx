@@ -19,6 +19,7 @@ import DropDown from "../../components/DropDown";
 import { roomType, rooms, themeType, themes } from "../../utils/dropdownTypes";
 import type { PromptSections } from "../../utils/prompts";
 import { signIn, useSession } from "next-auth/react";
+import { copy } from "../../content/copy";
 
 type GenerationMeta = {
   seed?: number;
@@ -57,6 +58,8 @@ const options: UploadWidgetConfig = {
     },
   },
 };
+
+const dreamCopy = copy.dream;
 
 export default function DreamPage() {
   const { status } = useSession();
@@ -148,7 +151,7 @@ export default function DreamPage() {
 
     if (!res.ok) {
       const errorText = await res.text();
-      let errorMessage = "Image generation failed";
+      let errorMessage = dreamCopy.errorFallback;
       try {
         const parsed = JSON.parse(errorText);
         if (typeof parsed?.error === "string") {
@@ -201,7 +204,7 @@ export default function DreamPage() {
         controlnets: newPhoto?.controlnets ?? undefined,
       });
     } else {
-      setError("Image generation failed");
+      setError(dreamCopy.errorFallback);
       setPromptSections(null);
       setGenerationMeta(null);
     }
@@ -218,55 +221,33 @@ export default function DreamPage() {
         <section className="grid items-start gap-12 lg:grid-cols-[1.05fr_1fr]">
           <div className="space-y-6">
             <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-emerald-300">
-              Interactive editor
+              {dreamCopy.badge}
             </span>
             <h1 className="text-4xl font-semibold tracking-tight text-white sm:text-5xl lg:text-6xl">
-              Generate polished redesigns from any room photo
+              {dreamCopy.title}
             </h1>
             <p className="text-base text-slate-300 sm:text-lg">
-              Upload a space, choose a vibe, and deliver magazine-worthy renderings in minutes. RoomGPT preserves your layout while refreshing finishes, lighting, and decor.
+              {dreamCopy.description}
             </p>
             <ul className="space-y-3 text-sm text-slate-300">
-              <li className="flex items-start gap-3">
-                <span className="mt-1 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/5 text-xs font-semibold text-emerald-200">
-                  01
-                </span>
-                <div>
-                  <p className="font-medium text-white">Upload any room photo</p>
-                  <p className="text-slate-400">
-                    No staging required—RoomGPT keeps proportions grounded in your source image.
-                  </p>
-                </div>
-              </li>
-              <li className="flex items-start gap-3">
-                <span className="mt-1 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/5 text-xs font-semibold text-emerald-200">
-                  02
-                </span>
-                <div>
-                  <p className="font-medium text-white">Explore curated styles</p>
-                  <p className="text-slate-400">
-                    Mix presets with custom prompts and iterate until you nail the concept.
-                  </p>
-                </div>
-              </li>
-              <li className="flex items-start gap-3">
-                <span className="mt-1 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/5 text-xs font-semibold text-emerald-200">
-                  03
-                </span>
-                <div>
-                  <p className="font-medium text-white">Share, compare, and download</p>
-                  <p className="text-slate-400">
-                    Use interactive sliders, export HD renders, and keep the prompt breakdown for reuse.
-                  </p>
-                </div>
-              </li>
+              {dreamCopy.benefits.map((benefit, index) => (
+                <li key={benefit.title} className="flex items-start gap-3">
+                  <span className="mt-1 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/5 text-xs font-semibold text-emerald-200">
+                    {String(index + 1).padStart(2, "0")}
+                  </span>
+                  <div>
+                    <p className="font-medium text-white">{benefit.title}</p>
+                    <p className="text-slate-400">{benefit.description}</p>
+                  </div>
+                </li>
+              ))}
             </ul>
             <div className="rounded-3xl border border-white/10 bg-white/5 p-4 text-sm text-slate-300 backdrop-blur lg:max-w-sm">
-              Manage billing and credits from your{" "}
+              {dreamCopy.billingReminderPrefix}
               <Link href="/dashboard" className="font-semibold text-white underline decoration-emerald-300/70 underline-offset-4">
-                dashboard
+                {dreamCopy.billingReminderLink}
               </Link>
-              . Unlimited plans unlock faster generations.
+              {dreamCopy.billingReminderSuffix}
             </div>
           </div>
 
@@ -275,7 +256,7 @@ export default function DreamPage() {
             <div className="rounded-[2.5rem] border border-white/10 bg-white/5 p-6 shadow-2xl backdrop-blur">
               {!isAuthenticated && (
                 <div className="mb-4 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-100">
-                  Sign in to generate rooms and save your progress. Credits and subscriptions live in your dashboard.
+                  {dreamCopy.authBanner}
                 </div>
               )}
               <ResizablePanel>
@@ -292,7 +273,7 @@ export default function DreamPage() {
                               alt="Step one"
                             />
                             <p className="text-sm font-medium text-white">
-                              Choose your style
+                              {dreamCopy.styleStep}
                             </p>
                           </div>
                           <DropDown
@@ -312,7 +293,7 @@ export default function DreamPage() {
                               alt="Step two"
                             />
                             <p className="text-sm font-medium text-white">
-                              Select your room type
+                              {dreamCopy.roomStep}
                             </p>
                           </div>
                           <DropDown
@@ -330,7 +311,7 @@ export default function DreamPage() {
                               alt="Step three"
                             />
                             <p className="text-sm font-medium text-white">
-                              Upload your reference photo
+                              {dreamCopy.uploadStep}
                             </p>
                           </div>
                           <div className="overflow-hidden rounded-2xl border border-dashed border-white/20 bg-white/5 px-4 py-6">
@@ -340,19 +321,9 @@ export default function DreamPage() {
                       </div>
                     ) : (
                       <div className="w-full space-y-2 text-sm text-slate-300">
-                        <p>
-                          Here's your remodeled{" "}
-                          <span className="font-semibold text-white">
-                            {room.toLowerCase()}
-                          </span>{" "}
-                          in the{" "}
-                          <span className="font-semibold text-white">
-                            {theme.toLowerCase()}
-                          </span>{" "}
-                          theme.
-                        </p>
+                        <p>{dreamCopy.remodelledHeading(room, theme)}</p>
                         <p className="text-xs text-slate-400">
-                          Toggle views or download the HD render below.
+                          {dreamCopy.toggleLabel}
                         </p>
                       </div>
                     )}
@@ -383,7 +354,7 @@ export default function DreamPage() {
                       <div className="grid w-full gap-4 sm:grid-cols-2">
                         <figure className="space-y-2">
                           <figcaption className="text-sm font-medium text-slate-200">
-                            Original
+                            {dreamCopy.originalLabel}
                           </figcaption>
                           <Image
                             alt="original room"
@@ -395,7 +366,7 @@ export default function DreamPage() {
                         </figure>
                         <figure className="space-y-2">
                           <figcaption className="text-sm font-medium text-slate-200">
-                            Generated
+                            {dreamCopy.generatedLabel}
                           </figcaption>
                           <a href={restoredImage} target="_blank" rel="noreferrer">
                             <Image
@@ -440,7 +411,7 @@ export default function DreamPage() {
                           }}
                           className="inline-flex flex-1 items-center justify-center rounded-full border border-white/15 bg-white/5 px-5 py-2 text-sm font-semibold text-white transition hover:border-white/30 hover:bg-white/10"
                         >
-                          Generate new room
+                          {dreamCopy.newRoom}
                         </button>
                       ) : null}
                       {restoredLoaded ? (
@@ -450,7 +421,7 @@ export default function DreamPage() {
                           }}
                           className="inline-flex flex-1 items-center justify-center rounded-full bg-emerald-400 px-5 py-2 text-sm font-semibold text-slate-950 transition hover:bg-emerald-300"
                         >
-                          Download render
+                          {dreamCopy.download}
                         </button>
                       ) : null}
                     </div>
@@ -465,7 +436,7 @@ export default function DreamPage() {
           <section className="rounded-[2.5rem] border border-white/10 bg-white/5 p-8 text-left shadow-2xl backdrop-blur">
             <div className="space-y-6">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-baseline sm:justify-between">
-                <h2 className="text-2xl font-semibold text-white">Prompt breakdown</h2>
+                <h2 className="text-2xl font-semibold text-white">{dreamCopy.promptTitle}</h2>
                 {generationMeta?.inferenceSeconds ? (
                   <p className="text-xs uppercase tracking-wide text-slate-400">
                     Generated in {generationMeta.inferenceSeconds.toFixed(1)} seconds
@@ -475,7 +446,7 @@ export default function DreamPage() {
               <div className="grid gap-6 sm:grid-cols-3">
                 <div>
                   <p className="text-xs uppercase tracking-wide text-slate-400">
-                    General
+                    {dreamCopy.promptGeneral}
                   </p>
                   <p className="mt-2 text-sm leading-6 text-slate-200">
                     {promptSections.general}
@@ -483,7 +454,7 @@ export default function DreamPage() {
                 </div>
                 <div>
                   <p className="text-xs uppercase tracking-wide text-slate-400">
-                    Room
+                    {dreamCopy.promptRoom}
                   </p>
                   <p className="mt-2 text-sm leading-6 text-slate-200">
                     {promptSections.room}
@@ -491,7 +462,7 @@ export default function DreamPage() {
                 </div>
                 <div>
                   <p className="text-xs uppercase tracking-wide text-slate-400">
-                    Style
+                    {dreamCopy.promptTheme}
                   </p>
                   <p className="mt-2 text-sm leading-6 text-slate-200">
                     {promptSections.theme}
@@ -501,7 +472,7 @@ export default function DreamPage() {
               {generationMeta ? (
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-slate-200">
-                    <p className="text-xs uppercase tracking-wide text-slate-400">Sampling</p>
+                    <p className="text-xs uppercase tracking-wide text-slate-400">{dreamCopy.sampling}</p>
                     <div className="mt-2 space-y-1.5">
                       <p>Seed: {generationMeta.seed ?? "Random"}</p>
                       <p>Strength: {formatFloat(generationMeta.strength)}</p>
@@ -511,9 +482,9 @@ export default function DreamPage() {
                   </div>
                   {generationMeta.controlnets ? (
                     <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-slate-200">
-                      <p className="text-xs uppercase tracking-wide text-slate-400">
-                        ControlNet
-                      </p>
+                    <p className="text-xs uppercase tracking-wide text-slate-400">
+                      {dreamCopy.controlnet}
+                    </p>
                       <div className="mt-2 space-y-2">
                         {generationMeta.controlnets.map((item, index) => {
                           const conditioningScale =

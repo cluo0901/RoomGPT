@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { copy } from "../../content/copy";
 
 interface LookupResult {
   user: {
@@ -25,12 +26,8 @@ interface LookupResult {
   }>;
 }
 
-const PLAN_LABELS: Record<string, string> = {
-  subscription: "Unlimited subscription",
-  bundle: "Credit bundle",
-  pay_per_use: "Pay per use",
-  trial: "Trial",
-};
+const adminCopy = copy.admin;
+const PLAN_LABELS: Record<string, string> = adminCopy.planLabels;
 
 export default function AdminPanel({
   initialEmail,
@@ -47,7 +44,7 @@ export default function AdminPanel({
   const handleLookup = async () => {
     const normalized = email.trim().toLowerCase();
     if (!normalized) {
-      setError("Enter an email address to look up.");
+      setError(adminCopy.lookup.emptyEmail);
       setResult(null);
       return;
     }
@@ -65,14 +62,14 @@ export default function AdminPanel({
       });
       const payload = await response.json();
       if (!response.ok) {
-        setError(payload?.error ?? "Failed to load user.");
+        setError(payload?.error ?? adminCopy.lookup.errorLookup);
         setResult(null);
       } else {
         setResult(payload as LookupResult);
       }
     } catch (err) {
       console.error("Admin lookup error", err);
-      setError("Network error while loading user.");
+      setError(adminCopy.lookup.errorNetwork);
       setResult(null);
     } finally {
       setLoading(false);
@@ -103,14 +100,14 @@ export default function AdminPanel({
       });
       const payload = await response.json();
       if (!response.ok) {
-        setError(payload?.error ?? "Action failed.");
+        setError(payload?.error ?? adminCopy.alerts.error);
       } else {
-        setSuccess(payload?.success ? "Action completed." : null);
+        setSuccess(payload?.success ? adminCopy.alerts.success : null);
         refreshState(payload);
       }
     } catch (err) {
       console.error("Admin action error", err);
-      setError("Network error while performing action.");
+      setError(adminCopy.alerts.actionNetwork);
     } finally {
       setActionLoading(null);
     }
@@ -121,7 +118,7 @@ export default function AdminPanel({
     const formData = new FormData(event.currentTarget);
     const delta = Number(formData.get("credits"));
     if (!Number.isFinite(delta) || delta === 0) {
-      setError("Enter a non-zero numeric amount to add or subtract credits.");
+      setError(adminCopy.alerts.creditInput);
       return;
     }
     await performAction({ action: "grant_credits", credits: delta }, "grant");
@@ -142,17 +139,16 @@ export default function AdminPanel({
   return (
     <div className="space-y-6">
       <section className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-lg">
-        <h2 className="text-lg font-semibold text-white">Find a user</h2>
+        <h2 className="text-lg font-semibold text-white">{adminCopy.lookup.heading}</h2>
         <p className="mt-1 text-sm text-slate-300">
-          Look up a user by the email they use to sign in. You can then add credits
-          or toggle their subscription status.
+          {adminCopy.lookup.description}
         </p>
         <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
           <input
             type="email"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
-            placeholder="user@example.com"
+            placeholder={adminCopy.lookup.placeholder}
             className="w-full rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:border-emerald-400 focus:outline-none"
           />
           <button
@@ -161,7 +157,7 @@ export default function AdminPanel({
             disabled={loading}
             className="inline-flex items-center justify-center rounded-full bg-emerald-400 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-70"
           >
-            {loading ? "Searching…" : "Lookup"}
+            {loading ? `${adminCopy.lookup.button}…` : adminCopy.lookup.button}
           </button>
         </div>
       </section>
@@ -181,44 +177,44 @@ export default function AdminPanel({
       {result ? (
         <section className="space-y-6">
           <div className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-lg">
-            <h3 className="text-base font-semibold text-white">User details</h3>
+            <h3 className="text-base font-semibold text-white">{adminCopy.userDetails.heading}</h3>
             <dl className="mt-3 grid gap-3 sm:grid-cols-2">
               <div>
                 <dt className="text-xs uppercase tracking-wide text-slate-400">
-                  Email
+                  {adminCopy.userDetails.email}
                 </dt>
                 <dd className="text-sm text-slate-200">{result.user.email}</dd>
               </div>
               <div>
                 <dt className="text-xs uppercase tracking-wide text-slate-400">
-                  Name
+                  {adminCopy.userDetails.name}
                 </dt>
-                <dd className="text-sm text-slate-200">{result.user.name ?? "—"}</dd>
+                <dd className="text-sm text-slate-200">{result.user.name ?? adminCopy.userDetails.none}</dd>
               </div>
               <div>
                 <dt className="text-xs uppercase tracking-wide text-slate-400">
-                  Plan
+                  {adminCopy.userDetails.plan}
                 </dt>
                 <dd className="text-sm text-slate-200">
-                  {PLAN_LABELS[result.billing?.plan_type ?? ""] ?? "No plan"}
+                  {PLAN_LABELS[result.billing?.plan_type ?? ""] ?? adminCopy.userDetails.noPlan}
                 </dd>
               </div>
               <div>
                 <dt className="text-xs uppercase tracking-wide text-slate-400">
-                  Subscription status
+                  {adminCopy.userDetails.subscriptionStatus}
                 </dt>
                 <dd className="text-sm text-slate-200">
-                  {result.billing?.subscription_status ?? "—"}
+                  {result.billing?.subscription_status ?? adminCopy.userDetails.none}
                 </dd>
               </div>
               <div>
                 <dt className="text-xs uppercase tracking-wide text-slate-400">
-                  Remaining credits
+                  {adminCopy.userDetails.remainingCredits}
                 </dt>
                 <dd className="text-sm text-slate-200">
                   {typeof result.credits?.remaining === "number"
                     ? result.credits.remaining
-                    : "—"}
+                    : adminCopy.userDetails.none}
                 </dd>
               </div>
             </dl>
@@ -226,16 +222,16 @@ export default function AdminPanel({
 
           <div className="grid gap-6 md:grid-cols-2">
             <div className="space-y-3 rounded-3xl border border-white/10 bg-white/5 p-6 shadow-lg">
-              <h3 className="text-base font-semibold text-white">Adjust credits</h3>
+              <h3 className="text-base font-semibold text-white">{adminCopy.credits.heading}</h3>
               <p className="text-sm text-slate-300">
-                Positive values add credits; negative values remove them.
+                {adminCopy.credits.description}
               </p>
               <form onSubmit={handleGrantCredits} className="space-y-3">
                 <input
                   type="number"
                   name="credits"
                   step="1"
-                  placeholder="e.g. 5 or -3"
+                  placeholder={adminCopy.credits.placeholder}
                   className="w-full rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:border-emerald-400 focus:outline-none"
                 />
                 <button
@@ -243,15 +239,15 @@ export default function AdminPanel({
                   disabled={actionLoading === "grant"}
                   className="inline-flex items-center justify-center rounded-full bg-emerald-400 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-70"
                 >
-                  {actionLoading === "grant" ? "Updating…" : "Apply change"}
+                  {actionLoading === "grant" ? adminCopy.credits.buttonPending : adminCopy.credits.button}
                 </button>
               </form>
             </div>
 
             <div className="space-y-3 rounded-3xl border border-white/10 bg-white/5 p-6 shadow-lg">
-              <h3 className="text-base font-semibold text-white">Plan controls</h3>
+              <h3 className="text-base font-semibold text-white">{adminCopy.planControls.heading}</h3>
               <p className="text-sm text-slate-300">
-                Switch the user's plan or toggle the unlimited subscription.
+                {adminCopy.planControls.description}
               </p>
               <div className="flex flex-col gap-2 text-sm text-slate-200">
                 <button
@@ -260,7 +256,7 @@ export default function AdminPanel({
                   disabled={actionLoading === "plan-subscription"}
                   className="rounded-2xl border border-emerald-400/40 px-3 py-2 text-left text-emerald-200 transition hover:bg-emerald-500/10 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  Activate unlimited subscription
+                  {adminCopy.planControls.subscription}
                 </button>
                 <button
                   type="button"
@@ -268,7 +264,7 @@ export default function AdminPanel({
                   disabled={actionLoading === "plan-bundle"}
                   className="rounded-2xl border border-blue-400/40 px-3 py-2 text-left text-blue-200 transition hover:bg-blue-500/10 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  Mark as credit bundle user
+                  {adminCopy.planControls.bundle}
                 </button>
                 <button
                   type="button"
@@ -276,7 +272,7 @@ export default function AdminPanel({
                   disabled={actionLoading === "plan-pay_per_use"}
                   className="rounded-2xl border border-indigo-400/40 px-3 py-2 text-left text-indigo-200 transition hover:bg-indigo-500/10 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  Mark as pay-per-use user
+                  {adminCopy.planControls.payPerUse}
                 </button>
                 <button
                   type="button"
@@ -284,23 +280,23 @@ export default function AdminPanel({
                   disabled={actionLoading === "plan-trial"}
                   className="rounded-2xl border border-white/15 px-3 py-2 text-left text-slate-200 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  Move to trial / no plan
+                  {adminCopy.planControls.trial}
                 </button>
               </div>
             </div>
           </div>
 
           <div className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-lg">
-            <h3 className="text-base font-semibold text-white">Recent usage</h3>
+            <h3 className="text-base font-semibold text-white">{adminCopy.usage.heading}</h3>
             {result.usage.length > 0 ? (
               <div className="mt-3 overflow-auto">
                 <table className="min-w-full divide-y divide-white/10 text-sm text-slate-200">
                   <thead className="bg-white/5 text-slate-300">
                     <tr>
-                      <th className="px-4 py-2 text-left font-medium">When</th>
-                      <th className="px-4 py-2 text-left font-medium">Provider</th>
-                      <th className="px-4 py-2 text-left font-medium">Approach</th>
-                      <th className="px-4 py-2 text-left font-medium">Credits</th>
+                      <th className="px-4 py-2 text-left font-medium">{adminCopy.usage.when}</th>
+                      <th className="px-4 py-2 text-left font-medium">{adminCopy.usage.provider}</th>
+                      <th className="px-4 py-2 text-left font-medium">{adminCopy.usage.approach}</th>
+                      <th className="px-4 py-2 text-left font-medium">{adminCopy.usage.credits}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/10">
@@ -319,7 +315,7 @@ export default function AdminPanel({
               </div>
             ) : (
               <p className="mt-3 text-sm text-slate-400">
-                No usage events recorded for this user.
+                {adminCopy.usage.empty}
               </p>
             )}
           </div>

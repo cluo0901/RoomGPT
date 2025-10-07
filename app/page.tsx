@@ -9,99 +9,39 @@ import {
 import { StarIcon } from "@heroicons/react/20/solid";
 import Footer from "../components/Footer";
 import Header from "../components/Header";
+import { copy } from "../content/copy";
 
-const featureCards = [
-  {
-    title: "Photorealistic redesigns",
-    description:
-      "RoomGPT keeps your layout while refreshing colors, furniture, lighting, and styling with magazine-worthy detail.",
-    icon: SparklesIcon,
+const homeCopy = copy.home;
+const featureCards = homeCopy.features.cards.map((card, index) => {
+  const icons = [SparklesIcon, Squares2X2Icon, ChatBubbleBottomCenterTextIcon];
+  return { ...card, icon: icons[index] ?? SparklesIcon };
+});
+const steps = homeCopy.steps.items;
+const styleShowcase = homeCopy.styles.cards;
+const testimonials = homeCopy.testimonials.cards;
+const planVariantClasses: Record<
+  string,
+  { card: string; button: string }
+> = {
+  outline: {
+    card:
+      "flex h-full flex-col rounded-3xl border border-white/10 bg-white/5 p-6 text-left shadow-lg transition hover:border-white/20 hover:bg-white/10",
+    button:
+      "mt-auto inline-flex w-full justify-center rounded-full border border-white/20 px-4 py-2 text-sm font-semibold text-white hover:border-white/40 hover:bg-white/10",
   },
-  {
-    title: "Dozens of styles",
-    description:
-      "Browse modern, Scandinavian, Japandi, luxury, coastal, and more. Save presets or mix and match instantly.",
-    icon: Squares2X2Icon,
+  primary: {
+    card:
+      "flex h-full flex-col rounded-3xl border border-emerald-400/30 bg-emerald-400/10 p-6 text-left shadow-lg",
+    button:
+      "mt-auto inline-flex w-full justify-center rounded-full bg-white px-4 py-2 text-sm font-semibold text-emerald-900 hover:bg-slate-100",
   },
-  {
-    title: "Share with clients",
-    description:
-      "Send interactive before-and-after sliders, download HD renders, or export prompts to reuse in other tools.",
-    icon: ChatBubbleBottomCenterTextIcon,
+  accent: {
+    card:
+      "flex h-full flex-col rounded-3xl border border-white/10 bg-white/5 p-6 text-left shadow-lg transition hover:border-white/20 hover:bg-white/10",
+    button:
+      "mt-auto inline-flex w-full justify-center rounded-full bg-emerald-400 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-emerald-300",
   },
-];
-
-const styleShowcase = [
-  { label: "Modern Luxe", image: "/generated-pic-2.jpg" },
-  { label: "Japandi Haven", image: "/generated-pic.png" },
-  { label: "Scandinavian Calm", image: "/generatedpic.png" },
-  { label: "Coastal Breeze", image: "/original-pic.jpg" },
-  { label: "Art Deco Glow", image: "/generated-pic-2.jpg" },
-  { label: "Mid-century Mood", image: "/generated-pic.png" },
-  { label: "Industrial Loft", image: "/generatedpic.png" },
-  { label: "Desert Modern", image: "/generated-pic-2.jpg" },
-  { label: "Minimal Zen", image: "/generated-pic.png" },
-];
-
-const steps = [
-  {
-    title: "Upload your room",
-    description: "Snap a quick photo of any room. No special lighting or staging required.",
-  },
-  {
-    title: "Choose a style",
-    description: "Select from curated interiors or build your own palette, materials, and vibe.",
-  },
-  {
-    title: "Generate & iterate",
-    description: "Create multiple concepts, compare results side by side, and download the winners.",
-  },
-];
-
-const testimonials = [
-  {
-    quote:
-      "RoomGPT helps our design team ship client-ready concepts in minutes. It’s our favorite ideation tool.",
-    name: "Avery Chen",
-    role: "Principal Designer, Studio Juniper",
-    image: "/generated-pic-2.jpg",
-  },
-  {
-    quote:
-      "I sold three staging packages this month using RoomGPT mockups. The renders speak for themselves.",
-    name: "Miguel Ortega",
-    role: "Realtor & Stager",
-    image: "/generatedpic.png",
-  },
-  {
-    quote:
-      "Our clients love seeing options instantly. The speed and quality means we can iterate without booking extra meetings.",
-    name: "Priya Desai",
-    role: "Founder, Nest & Nook Studio",
-    image: "/generated-pic.png",
-  },
-  {
-    quote:
-      "RoomGPT unlocked a new revenue stream for our staging business. We close deals faster with polished visuals.",
-    name: "Jordan Smith",
-    role: "Owner, Styled Spaces",
-    image: "/original-pic.jpg",
-  },
-  {
-    quote:
-      "From concept boards to final proposals, RoomGPT keeps our pipeline moving. It’s become the core of our presentation workflow.",
-    name: "Lina Torres",
-    role: "Lead Designer, Horizon Homes",
-    image: "/generated-pic-2.jpg",
-  },
-  {
-    quote:
-      "RoomGPT lets us experiment with ambitious styles before committing budget. It changed how we collaborate with clients.",
-    name: "Connor Blake",
-    role: "Creative Director, Atelier 12",
-    image: "/generatedpic.png",
-  },
-];
+};
 
 export default function HomePage() {
   return (
@@ -119,19 +59,19 @@ export default function HomePage() {
               <div className="space-y-6">
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-emerald-200">
                   <SparklesIcon className="h-3.5 w-3.5" />
-                  AI Interior Studio
+                  {homeCopy.hero.badge}
                 </span>
                 <h1 className="text-4xl font-semibold tracking-tight text-white sm:text-5xl lg:text-6xl">
-                  Redesign your room in seconds
+                  {homeCopy.hero.title}
                 </h1>
                 <p className="text-base text-slate-300 sm:text-lg">
-                  RoomGPT transforms your photos into polished design concepts that feel tailored to your taste. Swap styles, iterate quickly, and share interactive before-and-after sliders without scheduling a single site visit.
+                  {homeCopy.hero.description}
                 </p>
                 <Link
                   href="/dream"
                   className="inline-flex items-center justify-center rounded-full bg-emerald-400 px-10 py-5 text-lg font-semibold text-slate-950 transition hover:bg-emerald-300"
                 >
-                  Redesign your room
+                  {homeCopy.hero.cta}
                   <ArrowRightIcon className="ml-2 h-5 w-5" />
                 </Link>
               </div>
@@ -155,7 +95,7 @@ export default function HomePage() {
                   </div>
                 </div>
                 <p className="text-xs text-slate-300 lg:text-left">
-                  Drag, compare, and export HD concepts in one click.
+                  {homeCopy.hero.comparisonCaption}
                 </p>
               </div>
             </div>
@@ -166,10 +106,10 @@ export default function HomePage() {
           <section id="features" className="space-y-12">
             <div className="space-y-4 text-center">
               <h2 className="text-3xl font-semibold text-white sm:text-4xl">
-                Everything you need to pitch the perfect room
+                {homeCopy.features.title}
               </h2>
               <p className="mx-auto max-w-2xl text-sm text-slate-300 sm:text-base">
-                RoomGPT pairs powerful generative models with designer-approved templates so you can deliver concepts faster than ever before.
+                {homeCopy.features.subtitle}
               </p>
             </div>
             <div className="grid gap-6 md:grid-cols-3">
@@ -189,10 +129,10 @@ export default function HomePage() {
           <section id="how-it-works" className="grid gap-12 lg:grid-cols-[1.2fr_1fr] lg:items-center">
             <div className="space-y-6">
               <h2 className="text-3xl font-semibold text-white sm:text-4xl">
-                A polished concept in three steps
+                {homeCopy.steps.title}
               </h2>
               <p className="max-w-xl text-sm text-slate-300 sm:text-base">
-                Every render is grounded in your original layout, so proportions stay true to life. Iterate on furniture, color palettes, finishes, or lighting in a few clicks.
+                {homeCopy.steps.description}
               </p>
               <ul className="space-y-5">
                 {steps.map((step, index) => (
@@ -217,7 +157,7 @@ export default function HomePage() {
                 className="h-full w-full object-cover"
               />
               <div className="absolute inset-x-6 bottom-6 rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-xs text-slate-100 backdrop-blur">
-                Upload a photo, choose a vibe, and compare results with interactive sliders.
+                {homeCopy.steps.overlayText}
               </div>
             </div>
           </section>
@@ -225,10 +165,10 @@ export default function HomePage() {
           <section id="styles" className="space-y-8">
             <div className="flex flex-col gap-4 text-center">
               <h2 className="text-3xl font-semibold text-white sm:text-4xl">
-                Signature looks, ready to explore
+                {homeCopy.styles.title}
               </h2>
               <p className="mx-auto max-w-2xl text-sm text-slate-300 sm:text-base">
-                Mix curated styles with your own palette. Save presets for future projects or clients.
+                {homeCopy.styles.subtitle}
               </p>
             </div>
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -257,62 +197,57 @@ export default function HomePage() {
           <section id="pricing" className="space-y-8">
             <div className="text-center">
               <h2 className="text-3xl font-semibold text-white sm:text-4xl">
-                Pricing that flexes with your workload
+                {homeCopy.pricing.title}
               </h2>
               <p className="mx-auto mt-2 max-w-2xl text-sm text-slate-300 sm:text-base">
-                Start with one-off generations or unlock unlimited access for your studio. Billing is powered by Stripe so you can upgrade anytime.
+                {homeCopy.pricing.subtitle}
               </p>
             </div>
             <div className="grid gap-6 md:grid-cols-3">
-              <div className="flex h-full flex-col rounded-3xl border border-white/10 bg-white/5 p-6 text-left shadow-lg transition hover:border-white/20 hover:bg-white/10">
-                <h3 className="text-lg font-semibold text-white">Pay per use</h3>
-                <p className="mt-2 text-sm text-slate-300">
-                  Perfect for quick refreshes and one-off projects.
-                </p>
-                <p className="mt-6 text-3xl font-semibold text-white">$3</p>
-                <p className="text-xs text-slate-400">per generation</p>
-                <button className="mt-auto inline-flex w-full justify-center rounded-full border border-white/20 px-4 py-2 text-sm font-semibold text-white hover:border-white/40 hover:bg-white/10">
-                  Purchase generation
-                </button>
-              </div>
-              <div className="flex h-full flex-col rounded-3xl border border-emerald-400/30 bg-emerald-400/10 p-6 text-left shadow-lg">
-                <h3 className="text-lg font-semibold text-white">Bundle + save</h3>
-                <p className="mt-2 text-sm text-slate-100">
-                  Buy credits in bulk and generate whenever inspiration strikes.
-                </p>
-                <ul className="mt-4 space-y-2 text-sm text-emerald-100">
-                  <li>• 10 renders — $25</li>
-                  <li>• 25 renders — $55</li>
-                </ul>
-                <p className="mt-6 text-xs text-emerald-200">
-                  Credits never expire.
-                </p>
-                <button className="mt-auto inline-flex w-full justify-center rounded-full bg-white px-4 py-2 text-sm font-semibold text-emerald-900 hover:bg-slate-100">
-                  Buy bundle
-                </button>
-              </div>
-              <div className="flex h-full flex-col rounded-3xl border border-white/10 bg-white/5 p-6 text-left shadow-lg transition hover:border-white/20 hover:bg-white/10">
-                <h3 className="text-lg font-semibold text-white">Unlimited studio</h3>
-                <p className="mt-2 text-sm text-slate-300">
-                  Unlimited renders for interior teams and real estate pros.
-                </p>
-                <p className="mt-6 text-3xl font-semibold text-white">$99</p>
-                <p className="text-xs text-slate-400">per month</p>
-                <p className="mt-4 text-xs text-slate-400">
-                  Includes priority generations, HD downloads, and team billing.
-                </p>
-                <button className="mt-auto inline-flex w-full justify-center rounded-full bg-emerald-400 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-emerald-300">
-                  Subscribe now
-                </button>
-              </div>
+              {homeCopy.pricing.plans.map((plan) => {
+                const variantClasses =
+                  planVariantClasses[plan.variant ?? "outline"] ??
+                  planVariantClasses.outline;
+                return (
+                  <div key={plan.title} className={variantClasses.card}>
+                    <h3 className="text-lg font-semibold text-white">{plan.title}</h3>
+                    <p className="mt-2 text-sm text-slate-300">
+                      {plan.description}
+                    </p>
+                    {plan.price ? (
+                      <p className="mt-6 text-3xl font-semibold text-white">{plan.price}</p>
+                    ) : null}
+                    {plan.cadence ? (
+                      <p className="text-xs text-slate-400">{plan.cadence}</p>
+                    ) : null}
+                    {plan.bullets ? (
+                      <ul className="mt-4 space-y-2 text-sm text-emerald-100">
+                        {plan.bullets.map((item) => (
+                          <li key={item}>{item}</li>
+                        ))}
+                      </ul>
+                    ) : null}
+                    {plan.footnote ? (
+                      <p className={`mt-6 text-xs ${plan.variant === "primary" ? "text-emerald-200" : "text-slate-400"}`}>
+                        {plan.footnote}
+                      </p>
+                    ) : null}
+                    <button className={variantClasses.button}>
+                      {plan.cta}
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           </section>
 
           <section className="space-y-8">
             <div className="text-center">
-              <h2 className="text-3xl font-semibold text-white sm:text-4xl">What customers say</h2>
+              <h2 className="text-3xl font-semibold text-white sm:text-4xl">
+                {homeCopy.testimonials.title}
+              </h2>
               <p className="mx-auto mt-2 max-w-2xl text-sm text-slate-300 sm:text-base">
-                Loved by interior designers, realtors, stagers, and creative teams worldwide.
+                {homeCopy.testimonials.subtitle}
               </p>
             </div>
             <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
@@ -366,16 +301,16 @@ export default function HomePage() {
         <section className="relative isolate overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-r from-blue-600 via-emerald-500 to-teal-500 px-6 py-16 text-center">
           <div className="relative space-y-4">
             <h2 className="text-3xl font-semibold text-white sm:text-4xl">
-              Ready to showcase the future of your space?
+              {homeCopy.cta.title}
             </h2>
             <p className="mx-auto max-w-2xl text-sm text-white/80 sm:text-base">
-              Generate unlimited concepts with RoomGPT and deliver proposals that win clients faster.
+              {homeCopy.cta.description}
             </p>
             <Link
               href="/dream"
               className="inline-flex items-center justify-center rounded-full bg-emerald-900/90 px-6 py-3 text-sm font-semibold text-white transition hover:bg-emerald-800"
             >
-              Start creating
+              {homeCopy.cta.button}
               <ArrowRightIcon className="ml-2 h-4 w-4" />
             </Link>
           </div>

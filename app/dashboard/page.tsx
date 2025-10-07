@@ -5,6 +5,7 @@ import Header from "../../components/Header";
 import { getAuthSession } from "../../auth";
 import { getSupabaseAdminClient } from "../../lib/supabaseAdmin";
 import PurchaseButtons from "./PurchaseButtons";
+import { copy } from "../../content/copy";
 
 function formatDate(value: string | null | undefined) {
   if (!value) return "-";
@@ -16,6 +17,7 @@ function formatDate(value: string | null | undefined) {
 }
 
 export default async function DashboardPage() {
+  const dashboardCopy = copy.dashboard;
   const session = await getAuthSession();
   if (!session?.user?.id) {
     redirect(`/auth/signin?callbackUrl=${encodeURIComponent("/dashboard")}`);
@@ -38,8 +40,7 @@ export default async function DashboardPage() {
   let supabaseError: string | null = null;
 
   if (!supabase) {
-    supabaseError =
-      "Supabase credentials are not configured. Billing data will not be displayed.";
+    supabaseError = dashboardCopy.supabaseError;
   } else {
     const profilePromise = supabase
       .from("billing_profiles")
@@ -87,15 +88,10 @@ export default async function DashboardPage() {
     }
   }
 
+  const planNames = dashboardCopy.planNames as Record<string, string>;
   const readablePlan = planType
-    ? planType === "subscription"
-      ? "Unlimited subscription"
-      : planType === "bundle"
-      ? "Credit bundle"
-      : planType === "pay_per_use"
-      ? "Pay per use"
-      : planType
-    : "No active plan";
+    ? planNames[planType] ?? planType
+    : planNames.default;
 
   const isSubscriptionActive =
     planType === "subscription" && subscriptionStatus === "active";
@@ -107,13 +103,13 @@ export default async function DashboardPage() {
         <div className="space-y-12">
           <header className="space-y-3">
             <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-emerald-300">
-              Account
+              {dashboardCopy.badge}
             </span>
             <h1 className="text-4xl font-semibold tracking-tight text-white sm:text-5xl">
-              Manage your RoomGPT access
+              {dashboardCopy.heading}
             </h1>
             <p className="text-sm text-slate-300 sm:text-base">
-              Signed in as {session.user.email ?? session.user.id}. Top up credits, switch plans, and review recent generations.
+              {dashboardCopy.subheading(session.user.email ?? session.user.id)}
             </p>
           </header>
 
@@ -126,19 +122,19 @@ export default async function DashboardPage() {
           <section className="grid gap-6 lg:grid-cols-3">
             <div className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-lg">
               <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-400">
-                Plan
+                {dashboardCopy.planLabel}
               </h2>
               <p className="mt-3 text-lg font-medium text-white">{readablePlan}</p>
               {planType === "subscription" ? (
                 <p className="mt-1 text-xs text-slate-400">
-                  Status: {subscriptionStatus ?? "unknown"}
+                  {dashboardCopy.planStatusLabel} {subscriptionStatus ?? dashboardCopy.subscriptionStatusUnknown}
                 </p>
               ) : null}
             </div>
 
             <div className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-lg">
               <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-400">
-                Credits
+                {dashboardCopy.creditsLabel}
               </h2>
               <p className="mt-3 text-lg font-medium text-white">
                 {remainingCredits ?? remainingCredits === 0
@@ -146,26 +142,26 @@ export default async function DashboardPage() {
                   : "—"}
               </p>
               <p className="mt-1 text-xs text-slate-400">
-                Bundles and pay-per-use deduct one credit per generation.
+                {dashboardCopy.creditsDescription}
               </p>
             </div>
 
             <div className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-lg">
               <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-400">
-                Quick actions
+                {dashboardCopy.quickActions}
               </h2>
               <div className="mt-4 space-y-3 text-sm">
                 <Link
                   href="/dream"
                   className="inline-flex w-full justify-center rounded-full border border-white/15 bg-white/5 px-4 py-2 font-semibold text-white transition hover:border-white/30 hover:bg-white/10"
                 >
-                  Generate a room
+                  {dashboardCopy.generate}
                 </Link>
                 <Link
                   href="/"
                   className="inline-flex w-full justify-center rounded-full border border-white/15 bg-white/5 px-4 py-2 font-semibold text-white transition hover:border-white/30 hover:bg-white/10"
                 >
-                  Back to home
+                  {dashboardCopy.backHome}
                 </Link>
               </div>
             </div>
@@ -174,11 +170,11 @@ export default async function DashboardPage() {
           <section className="space-y-6">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <h2 className="text-2xl font-semibold text-white">
-                Top up your account
+                {dashboardCopy.topUpTitle}
               </h2>
               {isSubscriptionActive ? (
                 <span className="inline-flex items-center rounded-full border border-emerald-400/40 bg-emerald-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-emerald-200">
-                  Unlimited subscription active
+                  {dashboardCopy.unlimitedBadge}
                 </span>
               ) : null}
             </div>
@@ -187,9 +183,9 @@ export default async function DashboardPage() {
 
           <section className="space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-semibold text-white">Recent usage</h2>
+              <h2 className="text-2xl font-semibold text-white">{dashboardCopy.recentUsageTitle}</h2>
               <p className="text-xs uppercase tracking-wide text-slate-500">
-                Last 5 generations
+                {dashboardCopy.recentUsageHint}
               </p>
             </div>
             {usageEvents && usageEvents.length > 0 ? (
@@ -198,16 +194,16 @@ export default async function DashboardPage() {
                   <thead className="bg-white/5 text-slate-300">
                     <tr>
                       <th className="px-4 py-3 text-left font-medium uppercase tracking-wide">
-                        When
+                        {dashboardCopy.tableHeaders.when}
                       </th>
                       <th className="px-4 py-3 text-left font-medium uppercase tracking-wide">
-                        Provider
+                        {dashboardCopy.tableHeaders.provider}
                       </th>
                       <th className="px-4 py-3 text-left font-medium uppercase tracking-wide">
-                        Approach
+                        {dashboardCopy.tableHeaders.approach}
                       </th>
                       <th className="px-4 py-3 text-left font-medium uppercase tracking-wide">
-                        Credits
+                        {dashboardCopy.tableHeaders.credits}
                       </th>
                     </tr>
                   </thead>
@@ -233,7 +229,7 @@ export default async function DashboardPage() {
               </div>
             ) : (
               <p className="text-sm text-slate-400">
-                Generate your first room to see usage history here.
+                {dashboardCopy.recentUsageEmpty}
               </p>
             )}
           </section>

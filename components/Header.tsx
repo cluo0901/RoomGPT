@@ -4,11 +4,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { signIn, signOut } from "next-auth/react";
+import { copy } from "../content/copy";
 
+const headerCopy = copy.header;
 const NAV_LINKS = [
-  { href: "#how-it-works", label: "How it works" },
-  { href: "#styles", label: "Styles" },
-  { href: "#pricing", label: "Pricing" },
+  { href: "#how-it-works", label: headerCopy.nav.howItWorks },
+  { href: "#styles", label: headerCopy.nav.styles },
+  { href: "#pricing", label: headerCopy.nav.pricing },
 ];
 
 export default function Header() {
@@ -23,7 +25,7 @@ export default function Header() {
     <header className="sticky top-0 z-40 border-b border-white/10 bg-slate-950/80 backdrop-blur">
       <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4 sm:px-6">
         <Link href="/" className="text-lg font-semibold tracking-tight text-white">
-          RoomGPT
+          {headerCopy.brand}
         </Link>
 
         <div className="ml-auto hidden items-center gap-7 text-base font-semibold text-white md:flex">
@@ -41,7 +43,7 @@ export default function Header() {
               href="/dashboard"
               className="hidden rounded-full border border-white/10 px-4 py-2 font-medium text-slate-200 transition hover:bg-white/10 md:inline-flex"
             >
-              Dashboard
+              {headerCopy.nav.dashboard}
             </Link>
           ) : null}
           {isAdmin ? (
@@ -49,7 +51,7 @@ export default function Header() {
               href="/admin"
               className="hidden rounded-full border border-emerald-400/40 px-4 py-2 font-medium text-emerald-200 transition hover:bg-emerald-400/10 md:inline-flex"
             >
-              Admin
+              {headerCopy.nav.admin}
             </Link>
           ) : null}
           <button
@@ -61,7 +63,7 @@ export default function Header() {
             }
             className="rounded-full bg-emerald-400 px-4 py-2 text-base font-semibold text-slate-950 transition hover:bg-emerald-300"
           >
-            {isAuthenticated ? "Sign out" : "Sign in"}
+            {isAuthenticated ? headerCopy.nav.signOut : headerCopy.nav.signIn}
           </button>
         </div>
       </div>
