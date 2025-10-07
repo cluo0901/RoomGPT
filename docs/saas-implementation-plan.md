@@ -14,11 +14,12 @@
 - Introduce feature flags to keep billing paths dark until QA is complete.
 
 ## Phase 1 – Authentication & User Model (3-4 days)
-- Adopt **NextAuth.js** (Auth.js) with OAuth email providers (Google, GitHub) and magic link email fallback.
+- Adopt **NextAuth.js** (Auth.js) with OAuth email providers (Google, Apple ID) and magic link email fallback.
 - Extend backend with a persistent user store (e.g. Supabase/Postgres or Prisma + PlanetScale). Define entities:
   - `User`: auth identity, profile metadata, onboarding flags.
   - `UsageLedger`: per-generation log (user, request id, tokens consumed, timestamp, charge ref).
   - `CreditBalance`: current prepaid credits (nullable).
+  - See `docs/next-auth-schema.sql` for NextAuth adapter tables and `docs/saas-schema.sql` for billing helpers.
 - Wrap `/generate` route with session guard; redirect unauthenticated users to sign-in page.
 - Update frontend (header, CTA) with sign-in/out flows and gating UI states.
 
@@ -29,6 +30,7 @@
 - Build checkout handler route (`/api/billing/checkout`) to create Stripe Checkout Sessions based on plan selection.
 - Implement Stripe webhooks for payment succeeded/failed events to update local state (credit balance, subscription status).
 - For pay-per-use, leverage Stripe Payment Links or on-demand charges via Payment Intents; record invoice references.
+- Build an internal admin portal to adjust credits and plans manually; gate access via an allowlisted set of admin emails.
 
 ## Phase 3 – Usage Enforcement (4-5 days)
 - Update `/generate` to:

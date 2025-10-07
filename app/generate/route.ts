@@ -4,6 +4,11 @@ import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { buildPromptSections } from "../../utils/prompts";
 import { Buffer } from "node:buffer";
+import { getAuthSession } from "../../auth";
+import {
+  assertCanGenerate,
+  recordGenerationUsage,
+} from "../../lib/billing/gatekeeper";
 export const runtime = "nodejs";
 
 type PromptSectionResult = ReturnType<typeof buildPromptSections>;
@@ -136,6 +141,25 @@ export async function POST(request: Request) {
   }
 
   try {
+    const session = await getAuthSession();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const billingCheck = await assertCanGenerate(session.user.id);
+    if (!billingCheck.allowed) {
+      return NextResponse.json(
+        {
+          error:
+            billingCheck.reason ??
+            "Please purchase a plan or subscribe to continue generating rooms.",
+          plan: billingCheck.plan,
+          remainingCredits: billingCheck.remainingCredits,
+        },
+        { status: 402 }
+      );
+    }
+
     const promptSections = buildPromptSections(room, theme);
 
     if (process.env.NODE_ENV !== "production") {
@@ -144,7 +168,21 @@ export async function POST(request: Request) {
     const approach = resolveApproach(process.env.DEFAULT_APPROACH);
 
     if (approach === "openai") {
-      return await generateWithOpenAI({ imageUrl, promptSections });
+      const response = await generateWithOpenAI({ imageUrl, promptSections });
+      if (response.ok) {
+        const payload = await response
+          .clone()
+          .json()
+          .catch(() => null);
+        await recordGenerationUsage({
+          userId: session.user.id,
+          plan: billingCheck.plan,
+          approach: "openai",
+          provider: "openai-images",
+          seed: payload?.seed ?? null,
+        });
+      }
+      return response;
     }
 
     const controlResponse = await generateWithControlNet({
@@ -153,11 +191,41 @@ export async function POST(request: Request) {
     });
 
     if (controlResponse.ok || !canUseOpenAI()) {
+      if (controlResponse.ok) {
+        const payload = await controlResponse
+          .clone()
+          .json()
+          .catch(() => null);
+        await recordGenerationUsage({
+          userId: session.user.id,
+          plan: billingCheck.plan,
+          approach: "controlnet",
+          provider: "controlnet-service",
+          seed: payload?.seed ?? null,
+        });
+      }
       return controlResponse;
     }
 
     console.warn("ControlNet generation failed, falling back to OpenAI.");
-    return await generateWithOpenAI({ imageUrl, promptSections });
+    const fallbackResponse = await generateWithOpenAI({
+      imageUrl,
+      promptSections,
+    });
+    if (fallbackResponse.ok) {
+      const payload = await fallbackResponse
+        .clone()
+        .json()
+        .catch(() => null);
+      await recordGenerationUsage({
+        userId: session.user.id,
+        plan: billingCheck.plan,
+        approach: "openai-fallback",
+        provider: "openai-images",
+        seed: payload?.seed ?? null,
+      });
+    }
+    return fallbackResponse;
   } catch (error: any) {
     console.error("Image generation error", error);
     const message = error?.message ?? "Image generation failed";

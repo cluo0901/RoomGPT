@@ -1,7 +1,15 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
+import { signIn, signOut } from "next-auth/react";
 
 export default function Header() {
+  const { status, data } = useSession();
+  const isAuthenticated = status === "authenticated";
+  const isAdmin = Boolean(data?.user?.isAdmin);
+
   return (
     <header className="flex flex-col xs:flex-row justify-between items-center w-full mt-3 border-b pb-7 sm:px-4 px-2 border-gray-500 gap-2">
       <Link href="/" className="flex space-x-2">
@@ -16,15 +24,40 @@ export default function Header() {
           roomGPT.io
         </h1>
       </Link>
-      <a
-        className="flex max-w-fit items-center justify-center space-x-2 rounded-full border border-blue-600 text-white px-5 py-2 text-sm shadow-md hover:bg-blue-500 bg-blue-600 font-medium transition"
-        href="https://github.com/Nutlope/roomGPT"
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        <Github />
-        <p>Star on GitHub</p>
-      </a>
+      <div className="flex items-center gap-3">
+        <a
+          className="flex max-w-fit items-center justify-center space-x-2 rounded-full border border-blue-600 text-white px-5 py-2 text-sm shadow-md hover:bg-blue-500 bg-blue-600 font-medium transition"
+          href="https://github.com/Nutlope/roomGPT"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <Github />
+          <p>Star on GitHub</p>
+        </a>
+        {isAuthenticated ? (
+          <Link
+            href="/dashboard"
+            className="rounded-full border border-slate-600 px-5 py-2 text-sm font-medium text-white hover:bg-slate-700 transition"
+          >
+            Dashboard
+          </Link>
+        ) : null}
+        {isAdmin ? (
+          <Link
+            href="/admin"
+            className="rounded-full border border-emerald-500 px-5 py-2 text-sm font-medium text-emerald-200 hover:bg-emerald-900/40 transition"
+          >
+            Admin
+          </Link>
+        ) : null}
+        <button
+          type="button"
+          onClick={() => (isAuthenticated ? signOut({ callbackUrl: "/" }) : signIn())}
+          className="rounded-full border border-slate-600 px-5 py-2 text-sm font-medium text-white hover:bg-slate-700 transition"
+        >
+          {isAuthenticated ? "Sign out" : "Sign in"}
+        </button>
+      </div>
     </header>
   );
 }

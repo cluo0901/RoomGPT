@@ -2,6 +2,7 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import Image from "next/image";
+import Link from "next/link";
 import { useState } from "react";
 import { UrlBuilder } from "@bytescale/sdk";
 import { UploadWidgetConfig } from "@bytescale/upload-widget";
@@ -17,6 +18,7 @@ import downloadPhoto from "../../utils/downloadPhoto";
 import DropDown from "../../components/DropDown";
 import { roomType, rooms, themeType, themes } from "../../utils/dropdownTypes";
 import type { PromptSections } from "../../utils/prompts";
+import { signIn, useSession } from "next-auth/react";
 
 type GenerationMeta = {
   seed?: number;
@@ -57,6 +59,9 @@ const options: UploadWidgetConfig = {
 };
 
 export default function DreamPage() {
+  const { status } = useSession();
+  const isAuthenticated = status === "authenticated";
+
   const [originalPhoto, setOriginalPhoto] = useState<string | null>(null);
   const [restoredImage, setRestoredImage] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
@@ -92,31 +97,42 @@ export default function DreamPage() {
   };
 
   const UploadDropZone = () => (
-    <UploadDropzone
-      options={options}
-      onUpdate={({ uploadedFiles }) => {
-        if (uploadedFiles.length !== 0) {
-          const image = uploadedFiles[0];
-          const imageName = image.originalFile.originalFileName;
-          const imageUrl = UrlBuilder.url({
-            accountId: image.accountId,
-            filePath: image.filePath,
-            options: {
-              transformation: "preset",
-              transformationPreset: "thumbnail"
-            }
-          });
-          setPhotoName(imageName);
-          setOriginalPhoto(imageUrl);
-          generatePhoto(imageUrl);
-        }
-      }}
-      width="670px"
-      height="250px"
-    />
+    <div className={!isAuthenticated ? "pointer-events-none opacity-60" : ""}>
+      <UploadDropzone
+        options={options}
+        onUpdate={({ uploadedFiles }) => {
+          if (!isAuthenticated) {
+            signIn();
+            return;
+          }
+          if (uploadedFiles.length !== 0) {
+            const image = uploadedFiles[0];
+            const imageName = image.originalFile.originalFileName;
+            const imageUrl = UrlBuilder.url({
+              accountId: image.accountId,
+              filePath: image.filePath,
+              options: {
+                transformation: "preset",
+                transformationPreset: "thumbnail",
+              },
+            });
+            setPhotoName(imageName);
+            setOriginalPhoto(imageUrl);
+            generatePhoto(imageUrl);
+          }
+        }}
+        width="670px"
+        height="250px"
+      />
+    </div>
   );
 
   async function generatePhoto(fileUrl: string) {
+    if (!isAuthenticated) {
+      signIn();
+      return;
+    }
+
     await new Promise((resolve) => setTimeout(resolve, 200));
     setLoading(true);
     setRestoredLoaded(false);
@@ -202,6 +218,15 @@ export default function DreamPage() {
         <h1 className="mx-auto max-w-4xl font-display text-4xl font-bold tracking-normal text-slate-100 sm:text-6xl mb-5">
           Generate your <span className="text-blue-600">dream</span> room
         </h1>
+        {!isAuthenticated && (
+          <div className="mb-4 rounded-md border border-blue-600 bg-blue-900/40 px-4 py-3 text-sm text-blue-100">
+            Sign in to start generating rooms and to manage your credits. Visit your
+            <Link href="/dashboard" className="ml-1 underline">
+              dashboard
+            </Link>
+            to purchase bundles or subscribe for unlimited generations.
+          </div>
+        )}
         <ResizablePanel>
           <AnimatePresence mode="wait">
             <motion.div className="flex justify-between items-center w-full flex-col mt-4">
