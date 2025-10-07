@@ -43,17 +43,17 @@ const options: UploadWidgetConfig = {
   editor: { images: { crop: false } },
   styles: {
     colors: {
-      primary: "#2563EB", // Primary buttons & links
-      error: "#d23f4d", // Error messages
-      shade100: "#fff", // Standard text
-      shade200: "#fffe", // Secondary button text
-      shade300: "#fffd", // Secondary button text (hover)
-      shade400: "#fffc", // Welcome text
-      shade500: "#fff9", // Modal close button
-      shade600: "#fff7", // Border
-      shade700: "#fff2", // Progress indicator background
-      shade800: "#fff1", // File item background
-      shade900: "#ffff", // Various (draggable crop buttons, etc.)
+      primary: "#2563EB",
+      error: "#d23f4d",
+      shade100: "#fff",
+      shade200: "#fffe",
+      shade300: "#fffd",
+      shade400: "#fffc",
+      shade500: "#fff9",
+      shade600: "#fff7",
+      shade700: "#fff2",
+      shade800: "#fff1",
+      shade900: "#ffff",
     },
   },
 };
@@ -121,8 +121,8 @@ export default function DreamPage() {
             generatePhoto(imageUrl);
           }
         }}
-        width="670px"
-        height="250px"
+        width="100%"
+        height="260px"
       />
     </div>
   );
@@ -163,7 +163,7 @@ export default function DreamPage() {
       setError(errorMessage);
       setLoading(false);
       return;
-      }
+    }
 
     const newPhoto = await res.json();
     const generatedImage =
@@ -212,279 +212,340 @@ export default function DreamPage() {
   }
 
   return (
-    <div className="flex max-w-6xl mx-auto flex-col items-center justify-center py-2 min-h-screen">
+    <div className="min-h-screen bg-slate-950 text-slate-100 antialiased">
       <Header />
-      <main className="flex flex-1 w-full flex-col items-center justify-center text-center px-4 mt-4 sm:mb-0 mb-8">
-        <h1 className="mx-auto max-w-4xl font-display text-4xl font-bold tracking-normal text-slate-100 sm:text-6xl mb-5">
-          Generate your <span className="text-blue-600">dream</span> room
-        </h1>
-        {!isAuthenticated && (
-          <div className="mb-4 rounded-md border border-blue-600 bg-blue-900/40 px-4 py-3 text-sm text-blue-100">
-            Sign in to start generating rooms and to manage your credits. Visit your
-            <Link href="/dashboard" className="ml-1 underline">
-              dashboard
-            </Link>
-            to purchase bundles or subscribe for unlimited generations.
-          </div>
-        )}
-        <ResizablePanel>
-          <AnimatePresence mode="wait">
-            <motion.div className="flex justify-between items-center w-full flex-col mt-4">
-              {!restoredImage && (
-                <>
-                  <div className="space-y-4 w-full max-w-sm">
-                    <div className="flex mt-3 items-center space-x-3">
-                      <Image
-                        src="/number-1-white.svg"
-                        width={30}
-                        height={30}
-                        alt="1 icon"
-                      />
-                      <p className="text-left font-medium">
-                        Choose your room theme.
-                      </p>
-                    </div>
-                    <DropDown
-                      theme={theme}
-                      setTheme={(newTheme) =>
-                        setTheme(newTheme as typeof theme)
-                      }
-                      themes={themes}
-                    />
-                  </div>
-                  <div className="space-y-4 w-full max-w-sm">
-                    <div className="flex mt-10 items-center space-x-3">
-                      <Image
-                        src="/number-2-white.svg"
-                        width={30}
-                        height={30}
-                        alt="1 icon"
-                      />
-                      <p className="text-left font-medium">
-                        Choose your room type.
-                      </p>
-                    </div>
-                    <DropDown
-                      theme={room}
-                      setTheme={(newRoom) => setRoom(newRoom as typeof room)}
-                      themes={rooms}
-                    />
-                  </div>
-                  <div className="mt-4 w-full max-w-sm">
-                    <div className="flex mt-6 w-96 items-center space-x-3">
-                      <Image
-                        src="/number-3-white.svg"
-                        width={30}
-                        height={30}
-                        alt="1 icon"
-                      />
-                      <p className="text-left font-medium">
-                        Upload a picture of your room.
-                      </p>
-                    </div>
-                  </div>
-                </>
-              )}
-              {restoredImage && (
+      <main className="mx-auto flex w-full max-w-6xl flex-col gap-16 px-4 pb-24 pt-24 sm:px-6 lg:gap-20">
+        <section className="grid items-start gap-12 lg:grid-cols-[1.05fr_1fr]">
+          <div className="space-y-6">
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-emerald-300">
+              Interactive editor
+            </span>
+            <h1 className="text-4xl font-semibold tracking-tight text-white sm:text-5xl lg:text-6xl">
+              Generate polished redesigns from any room photo
+            </h1>
+            <p className="text-base text-slate-300 sm:text-lg">
+              Upload a space, choose a vibe, and deliver magazine-worthy renderings in minutes. RoomGPT preserves your layout while refreshing finishes, lighting, and decor.
+            </p>
+            <ul className="space-y-3 text-sm text-slate-300">
+              <li className="flex items-start gap-3">
+                <span className="mt-1 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/5 text-xs font-semibold text-emerald-200">
+                  01
+                </span>
                 <div>
-                  Here's your remodeled <b>{room.toLowerCase()}</b> in the{" "}
-                  <b>{theme.toLowerCase()}</b> theme!{" "}
+                  <p className="font-medium text-white">Upload any room photo</p>
+                  <p className="text-slate-400">
+                    No staging required—RoomGPT keeps proportions grounded in your source image.
+                  </p>
                 </div>
-              )}
-              <div
-                className={`${
-                  restoredLoaded ? "visible mt-6 -ml-8" : "invisible"
-                }`}
-              >
-                <Toggle
-                  className={`${restoredLoaded ? "visible mb-6" : "invisible"}`}
-                  sideBySide={sideBySide}
-                  setSideBySide={(newVal) => setSideBySide(newVal)}
-                />
-              </div>
-              {restoredLoaded && sideBySide && (
-                <CompareSlider
-                  original={originalPhoto!}
-                  restored={restoredImage!}
-                />
-              )}
-              {!originalPhoto && <UploadDropZone />}
-              {originalPhoto && !restoredImage && (
-                <Image
-                  alt="original photo"
-                  src={originalPhoto}
-                  className="rounded-2xl h-96"
-                  width={475}
-                  height={475}
-                />
-              )}
-              {restoredImage && originalPhoto && !sideBySide && (
-                <div className="flex sm:space-x-4 sm:flex-row flex-col">
-                  <div>
-                    <h2 className="mb-1 font-medium text-lg">Original Room</h2>
-                    <Image
-                      alt="original photo"
-                      src={originalPhoto}
-                      className="rounded-2xl object-cover w-[475px] h-96"
-                      width={475}
-                      height={475}
-                      unoptimized
-                    />
-                  </div>
-                  <div className="sm:mt-0 mt-8">
-                    <h2 className="mb-1 font-medium text-lg">Generated Room</h2>
-                    <a href={restoredImage} target="_blank" rel="noreferrer">
-                      <Image
-                        alt="restored photo"
-                        src={restoredImage}
-                        className="rounded-2xl object-cover sm:mt-0 mt-2 cursor-zoom-in w-[475px] h-96"
-                        width={475}
-                        height={475}
-                        unoptimized
-                        onLoadingComplete={() => setRestoredLoaded(true)}
-                      />
-                    </a>
-                  </div>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="mt-1 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/5 text-xs font-semibold text-emerald-200">
+                  02
+                </span>
+                <div>
+                  <p className="font-medium text-white">Explore curated styles</p>
+                  <p className="text-slate-400">
+                    Mix presets with custom prompts and iterate until you nail the concept.
+                  </p>
                 </div>
-              )}
-              {loading && (
-                <button
-                  disabled
-                  className="bg-blue-500 rounded-full text-white font-medium px-4 pt-2 pb-3 mt-8 w-40"
-                >
-                  <span className="pt-4">
-                    <LoadingDots color="white" style="large" />
-                  </span>
-                </button>
-              )}
-              {error && (
-                <div
-                  className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-xl mt-8"
-                  role="alert"
-                >
-                  <span className="block sm:inline">{error}</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="mt-1 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/5 text-xs font-semibold text-emerald-200">
+                  03
+                </span>
+                <div>
+                  <p className="font-medium text-white">Share, compare, and download</p>
+                  <p className="text-slate-400">
+                    Use interactive sliders, export HD renders, and keep the prompt breakdown for reuse.
+                  </p>
                 </div>
-              )}
-              <div className="flex space-x-2 justify-center">
-                {originalPhoto && !loading && (
-                  <button
-                    onClick={() => {
-                      setOriginalPhoto(null);
-                      setRestoredImage(null);
-                      setRestoredLoaded(false);
-                      setError(null);
-                      setGenerationMeta(null);
-                      setPromptSections(null);
-                    }}
-                    className="bg-blue-500 rounded-full text-white font-medium px-4 py-2 mt-8 hover:bg-blue-500/80 transition"
-                  >
-                    Generate New Room
-                  </button>
-                )}
-                {restoredLoaded && (
-                  <button
-                    onClick={() => {
-                      downloadPhoto(
-                        restoredImage!,
-                        appendNewToName(photoName!)
-                      );
-                    }}
-                    className="bg-white rounded-full text-black border font-medium px-4 py-2 mt-8 hover:bg-gray-100 transition"
-                  >
-                    Download Generated Room
-                  </button>
-                )}
-              </div>
-            </motion.div>
-          </AnimatePresence>
-        </ResizablePanel>
-      </main>
-      {promptSections && (
-        <section className="w-full max-w-4xl px-6 pb-12">
-          <div className="border border-gray-800 rounded-2xl bg-gray-900/60 p-6 text-left space-y-3">
-            <h3 className="text-lg font-semibold text-slate-100">
-              Prompt Breakdown
-            </h3>
-            <div>
-              <p className="text-sm uppercase tracking-wide text-gray-400">
-                General
-              </p>
-              <p className="text-gray-200 text-sm leading-6">
-                {promptSections.general}
-              </p>
+              </li>
+            </ul>
+            <div className="rounded-3xl border border-white/10 bg-white/5 p-4 text-sm text-slate-300 backdrop-blur lg:max-w-sm">
+              Manage billing and credits from your{" "}
+              <Link href="/dashboard" className="font-semibold text-white underline decoration-emerald-300/70 underline-offset-4">
+                dashboard
+              </Link>
+              . Unlimited plans unlock faster generations.
             </div>
-            <div>
-              <p className="text-sm uppercase tracking-wide text-gray-400">
-                Room
-              </p>
-              <p className="text-gray-200 text-sm leading-6">
-                {promptSections.room}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm uppercase tracking-wide text-gray-400">
-                Style
-              </p>
-              <p className="text-gray-200 text-sm leading-6">
-                {promptSections.theme}
-              </p>
-            </div>
-            {generationMeta && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 text-gray-300 text-sm">
-                <div className="rounded-xl border border-gray-800 bg-gray-900/50 p-4 space-y-1">
-                  <p className="uppercase tracking-wide text-[11px] text-gray-400">
-                    Sampling
-                  </p>
-                  <p>Seed: {generationMeta.seed ?? "Random"}</p>
-                  <p>
-                    Strength: {formatFloat(generationMeta.strength)}
-                  </p>
-                  <p>
-                    Guidance: {formatFloat(generationMeta.guidanceScale)}
-                  </p>
-                  <p>
-                    Steps: {generationMeta.numInferenceSteps ?? "n/a"}
-                  </p>
-                  {typeof generationMeta.inferenceSeconds === "number" && (
-                    <p>
-                      Time: {generationMeta.inferenceSeconds.toFixed(1)}s
-                    </p>
-                  )}
-                </div>
-                {generationMeta.controlnets && (
-                  <div className="rounded-xl border border-gray-800 bg-gray-900/50 p-4 space-y-1">
-                    <p className="uppercase tracking-wide text-[11px] text-gray-400">
-                      ControlNet
-                    </p>
-                    {generationMeta.controlnets.map((item, index) => {
-                      const conditioningScale =
-                        typeof item.conditioning_scale === "number"
-                          ? item.conditioning_scale
-                          : Number(item.conditioning_scale);
+          </div>
 
-                      return (
-                        <div key={`${item.type}-${index}`} className="space-y-0.5">
-                          <p>Type: {item.type ?? "canny"}</p>
-                          {item.conditioning_scale !== undefined && (
-                            <p>Scale: {formatFloat(conditioningScale)}</p>
-                          )}
-                          {(item.low_threshold !== undefined ||
-                            item.high_threshold !== undefined) && (
-                            <p>
-                              Thresholds: {item.low_threshold ?? "?"}/
-                              {item.high_threshold ?? "?"}
+          <div className="relative">
+            <div className="absolute inset-0 -top-10 -z-10 hidden rounded-[2.5rem] bg-gradient-to-br from-emerald-500/20 via-transparent to-blue-600/20 blur-3xl lg:block" />
+            <div className="rounded-[2.5rem] border border-white/10 bg-white/5 p-6 shadow-2xl backdrop-blur">
+              {!isAuthenticated && (
+                <div className="mb-4 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-100">
+                  Sign in to generate rooms and save your progress. Credits and subscriptions live in your dashboard.
+                </div>
+              )}
+              <ResizablePanel>
+                <AnimatePresence mode="wait">
+                  <motion.div className="flex w-full flex-col items-center gap-6 text-left">
+                    {!restoredImage ? (
+                      <div className="w-full space-y-6">
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-3">
+                            <Image
+                              src="/number-1-white.svg"
+                              width={30}
+                              height={30}
+                              alt="Step one"
+                            />
+                            <p className="text-sm font-medium text-white">
+                              Choose your style
                             </p>
-                          )}
+                          </div>
+                          <DropDown
+                            theme={theme}
+                            setTheme={(newTheme) =>
+                              setTheme(newTheme as typeof theme)
+                            }
+                            themes={themes}
+                          />
                         </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            )}
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-3">
+                            <Image
+                              src="/number-2-white.svg"
+                              width={30}
+                              height={30}
+                              alt="Step two"
+                            />
+                            <p className="text-sm font-medium text-white">
+                              Select your room type
+                            </p>
+                          </div>
+                          <DropDown
+                            theme={room}
+                            setTheme={(newRoom) => setRoom(newRoom as typeof room)}
+                            themes={rooms}
+                          />
+                        </div>
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-3">
+                            <Image
+                              src="/number-3-white.svg"
+                              width={30}
+                              height={30}
+                              alt="Step three"
+                            />
+                            <p className="text-sm font-medium text-white">
+                              Upload your reference photo
+                            </p>
+                          </div>
+                          <div className="overflow-hidden rounded-2xl border border-dashed border-white/20 bg-white/5 px-4 py-6">
+                            <UploadDropZone />
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="w-full space-y-2 text-sm text-slate-300">
+                        <p>
+                          Here's your remodeled{" "}
+                          <span className="font-semibold text-white">
+                            {room.toLowerCase()}
+                          </span>{" "}
+                          in the{" "}
+                          <span className="font-semibold text-white">
+                            {theme.toLowerCase()}
+                          </span>{" "}
+                          theme.
+                        </p>
+                        <p className="text-xs text-slate-400">
+                          Toggle views or download the HD render below.
+                        </p>
+                      </div>
+                    )}
+
+                    {restoredLoaded ? (
+                      <Toggle
+                        className="self-stretch rounded-2xl border border-white/10 bg-white/5 px-4 py-3"
+                        sideBySide={sideBySide}
+                        setSideBySide={(newVal) => setSideBySide(newVal)}
+                      />
+                    ) : null}
+
+                    {restoredLoaded && sideBySide ? (
+                      <CompareSlider original={originalPhoto!} restored={restoredImage!} />
+                    ) : null}
+
+                    {originalPhoto && !restoredImage ? (
+                      <Image
+                        alt="original room"
+                        src={originalPhoto}
+                        className="h-[420px] w-full rounded-3xl object-cover"
+                        width={512}
+                        height={512}
+                      />
+                    ) : null}
+
+                    {restoredImage && originalPhoto && !sideBySide ? (
+                      <div className="grid w-full gap-4 sm:grid-cols-2">
+                        <figure className="space-y-2">
+                          <figcaption className="text-sm font-medium text-slate-200">
+                            Original
+                          </figcaption>
+                          <Image
+                            alt="original room"
+                            src={originalPhoto}
+                            className="h-[260px] w-full rounded-3xl object-cover"
+                            width={512}
+                            height={512}
+                          />
+                        </figure>
+                        <figure className="space-y-2">
+                          <figcaption className="text-sm font-medium text-slate-200">
+                            Generated
+                          </figcaption>
+                          <a href={restoredImage} target="_blank" rel="noreferrer">
+                            <Image
+                              alt="generated room"
+                              src={restoredImage}
+                              className="h-[260px] w-full cursor-zoom-in rounded-3xl object-cover"
+                              width={512}
+                              height={512}
+                              onLoadingComplete={() => setRestoredLoaded(true)}
+                              unoptimized
+                            />
+                          </a>
+                        </figure>
+                      </div>
+                    ) : null}
+
+                    {loading ? (
+                      <div className="flex w-full items-center justify-center rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-white">
+                        <LoadingDots color="white" style="large" />
+                      </div>
+                    ) : null}
+
+                    {error ? (
+                      <div
+                        className="w-full rounded-2xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-200"
+                        role="alert"
+                      >
+                        {error}
+                      </div>
+                    ) : null}
+
+                    <div className="flex w-full flex-col gap-3 sm:flex-row">
+                      {originalPhoto && !loading ? (
+                        <button
+                          onClick={() => {
+                            setOriginalPhoto(null);
+                            setRestoredImage(null);
+                            setRestoredLoaded(false);
+                            setError(null);
+                            setGenerationMeta(null);
+                            setPromptSections(null);
+                          }}
+                          className="inline-flex flex-1 items-center justify-center rounded-full border border-white/15 bg-white/5 px-5 py-2 text-sm font-semibold text-white transition hover:border-white/30 hover:bg-white/10"
+                        >
+                          Generate new room
+                        </button>
+                      ) : null}
+                      {restoredLoaded ? (
+                        <button
+                          onClick={() => {
+                            downloadPhoto(restoredImage!, appendNewToName(photoName!));
+                          }}
+                          className="inline-flex flex-1 items-center justify-center rounded-full bg-emerald-400 px-5 py-2 text-sm font-semibold text-slate-950 transition hover:bg-emerald-300"
+                        >
+                          Download render
+                        </button>
+                      ) : null}
+                    </div>
+                  </motion.div>
+                </AnimatePresence>
+              </ResizablePanel>
+            </div>
           </div>
         </section>
-      )}
+
+        {promptSections ? (
+          <section className="rounded-[2.5rem] border border-white/10 bg-white/5 p-8 text-left shadow-2xl backdrop-blur">
+            <div className="space-y-6">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-baseline sm:justify-between">
+                <h2 className="text-2xl font-semibold text-white">Prompt breakdown</h2>
+                {generationMeta?.inferenceSeconds ? (
+                  <p className="text-xs uppercase tracking-wide text-slate-400">
+                    Generated in {generationMeta.inferenceSeconds.toFixed(1)} seconds
+                  </p>
+                ) : null}
+              </div>
+              <div className="grid gap-6 sm:grid-cols-3">
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-slate-400">
+                    General
+                  </p>
+                  <p className="mt-2 text-sm leading-6 text-slate-200">
+                    {promptSections.general}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-slate-400">
+                    Room
+                  </p>
+                  <p className="mt-2 text-sm leading-6 text-slate-200">
+                    {promptSections.room}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-slate-400">
+                    Style
+                  </p>
+                  <p className="mt-2 text-sm leading-6 text-slate-200">
+                    {promptSections.theme}
+                  </p>
+                </div>
+              </div>
+              {generationMeta ? (
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-slate-200">
+                    <p className="text-xs uppercase tracking-wide text-slate-400">Sampling</p>
+                    <div className="mt-2 space-y-1.5">
+                      <p>Seed: {generationMeta.seed ?? "Random"}</p>
+                      <p>Strength: {formatFloat(generationMeta.strength)}</p>
+                      <p>Guidance: {formatFloat(generationMeta.guidanceScale)}</p>
+                      <p>Steps: {generationMeta.numInferenceSteps ?? "n/a"}</p>
+                    </div>
+                  </div>
+                  {generationMeta.controlnets ? (
+                    <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-slate-200">
+                      <p className="text-xs uppercase tracking-wide text-slate-400">
+                        ControlNet
+                      </p>
+                      <div className="mt-2 space-y-2">
+                        {generationMeta.controlnets.map((item, index) => {
+                          const conditioningScale =
+                            typeof item.conditioning_scale === "number"
+                              ? item.conditioning_scale
+                              : Number(item.conditioning_scale);
+
+                          return (
+                            <div key={`${item.type}-${index}`} className="space-y-1">
+                              <p>Type: {item.type ?? "canny"}</p>
+                              {item.conditioning_scale !== undefined ? (
+                                <p>Scale: {formatFloat(conditioningScale)}</p>
+                              ) : null}
+                              {item.low_threshold !== undefined ||
+                              item.high_threshold !== undefined ? (
+                                <p>
+                                  Thresholds: {item.low_threshold ?? "?"}/
+                                  {item.high_threshold ?? "?"}
+                                </p>
+                              ) : null}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
+          </section>
+        ) : null}
+      </main>
       <Footer />
     </div>
   );

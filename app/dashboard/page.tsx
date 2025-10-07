@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import Footer from "../../components/Footer";
+import Header from "../../components/Header";
 import { getAuthSession } from "../../auth";
 import { getSupabaseAdminClient } from "../../lib/supabaseAdmin";
 import PurchaseButtons from "./PurchaseButtons";
@@ -99,115 +101,145 @@ export default async function DashboardPage() {
     planType === "subscription" && subscriptionStatus === "active";
 
   return (
-    <div className="min-h-screen bg-[#17181C] text-white">
-      <div className="mx-auto w-full max-w-5xl px-6 py-12 space-y-12">
-        <header className="space-y-2">
-          <h1 className="text-3xl font-semibold">Account dashboard</h1>
-          <p className="text-sm text-slate-300">
-            Signed in as {session.user.email ?? session.user.id}
-          </p>
-        </header>
+    <div className="min-h-screen bg-slate-950 text-slate-100 antialiased">
+      <Header />
+      <main className="mx-auto w-full max-w-5xl px-4 pb-24 pt-24 sm:px-6 lg:px-8">
+        <div className="space-y-12">
+          <header className="space-y-3">
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-emerald-300">
+              Account
+            </span>
+            <h1 className="text-4xl font-semibold tracking-tight text-white sm:text-5xl">
+              Manage your RoomGPT access
+            </h1>
+            <p className="text-sm text-slate-300 sm:text-base">
+              Signed in as {session.user.email ?? session.user.id}. Top up credits, switch plans, and review recent generations.
+            </p>
+          </header>
 
-        {supabaseError ? (
-          <div className="rounded-md border border-yellow-500 bg-yellow-900/30 px-4 py-3 text-sm text-yellow-100">
-            {supabaseError}
-          </div>
-        ) : null}
+          {supabaseError ? (
+            <div className="rounded-3xl border border-amber-400/30 bg-amber-500/10 px-5 py-4 text-sm text-amber-200">
+              {supabaseError}
+            </div>
+          ) : null}
 
-        <section className="grid gap-6 md:grid-cols-3">
-          <div className="rounded-xl border border-slate-700 bg-[#1F2025] p-5">
-            <h2 className="text-sm font-semibold text-slate-300">Plan</h2>
-            <p className="mt-2 text-lg font-medium">{readablePlan}</p>
-            {planType === "subscription" ? (
-              <p className="mt-1 text-xs text-slate-400">
-                Status: {subscriptionStatus ?? "unknown"}
+          <section className="grid gap-6 lg:grid-cols-3">
+            <div className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-lg">
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-400">
+                Plan
+              </h2>
+              <p className="mt-3 text-lg font-medium text-white">{readablePlan}</p>
+              {planType === "subscription" ? (
+                <p className="mt-1 text-xs text-slate-400">
+                  Status: {subscriptionStatus ?? "unknown"}
+                </p>
+              ) : null}
+            </div>
+
+            <div className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-lg">
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-400">
+                Credits
+              </h2>
+              <p className="mt-3 text-lg font-medium text-white">
+                {remainingCredits ?? remainingCredits === 0
+                  ? remainingCredits
+                  : "—"}
               </p>
-            ) : null}
-          </div>
-
-          <div className="rounded-xl border border-slate-700 bg-[#1F2025] p-5">
-            <h2 className="text-sm font-semibold text-slate-300">Credits</h2>
-            <p className="mt-2 text-lg font-medium">
-              {remainingCredits ?? remainingCredits === 0
-                ? remainingCredits
-                : "—"}
-            </p>
-            <p className="mt-1 text-xs text-slate-400">
-              Bundles and pay-per-use deduct one credit per generation.
-            </p>
-          </div>
-
-          <div className="rounded-xl border border-slate-700 bg-[#1F2025] p-5">
-            <h2 className="text-sm font-semibold text-slate-300">Quick actions</h2>
-            <div className="mt-3 space-y-2 text-sm">
-              <Link
-                href="/dream"
-                className="inline-flex w-full justify-center rounded-md border border-slate-600 px-3 py-2 text-sm font-medium text-slate-200 hover:bg-slate-700"
-              >
-                Generate a room
-              </Link>
-              <Link
-                href="/"
-                className="inline-flex w-full justify-center rounded-md border border-slate-600 px-3 py-2 text-sm font-medium text-slate-200 hover:bg-slate-700"
-              >
-                Back to home
-              </Link>
+              <p className="mt-1 text-xs text-slate-400">
+                Bundles and pay-per-use deduct one credit per generation.
+              </p>
             </div>
-          </div>
-        </section>
 
-        <section className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Top up your account</h2>
-            {isSubscriptionActive ? (
-              <span className="text-xs text-emerald-300">
-                Unlimited subscription active
-              </span>
-            ) : null}
-          </div>
-          <PurchaseButtons isSubscriptionActive={isSubscriptionActive ?? false} />
-        </section>
+            <div className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-lg">
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-400">
+                Quick actions
+              </h2>
+              <div className="mt-4 space-y-3 text-sm">
+                <Link
+                  href="/dream"
+                  className="inline-flex w-full justify-center rounded-full border border-white/15 bg-white/5 px-4 py-2 font-semibold text-white transition hover:border-white/30 hover:bg-white/10"
+                >
+                  Generate a room
+                </Link>
+                <Link
+                  href="/"
+                  className="inline-flex w-full justify-center rounded-full border border-white/15 bg-white/5 px-4 py-2 font-semibold text-white transition hover:border-white/30 hover:bg-white/10"
+                >
+                  Back to home
+                </Link>
+              </div>
+            </div>
+          </section>
 
-        <section className="space-y-3">
-          <h2 className="text-lg font-semibold">Recent usage</h2>
-          {usageEvents && usageEvents.length > 0 ? (
-            <div className="overflow-hidden rounded-xl border border-slate-700">
-              <table className="min-w-full divide-y divide-slate-700 text-sm">
-                <thead className="bg-slate-900/40 text-slate-300">
-                  <tr>
-                    <th className="px-4 py-2 text-left font-medium">When</th>
-                    <th className="px-4 py-2 text-left font-medium">Provider</th>
-                    <th className="px-4 py-2 text-left font-medium">Approach</th>
-                    <th className="px-4 py-2 text-left font-medium">Credits</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-800">
-                  {usageEvents.map((event) => (
-                    <tr key={event.id} className="bg-[#1A1B20]">
-                      <td className="px-4 py-2 text-slate-200">
-                        {formatDate(event.created_at)}
-                      </td>
-                      <td className="px-4 py-2 text-slate-300">
-                        {event.provider}
-                      </td>
-                      <td className="px-4 py-2 text-slate-300">
-                        {event.approach}
-                      </td>
-                      <td className="px-4 py-2 text-slate-300">
-                        {event.credits_consumed}
-                      </td>
+          <section className="space-y-6">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <h2 className="text-2xl font-semibold text-white">
+                Top up your account
+              </h2>
+              {isSubscriptionActive ? (
+                <span className="inline-flex items-center rounded-full border border-emerald-400/40 bg-emerald-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-emerald-200">
+                  Unlimited subscription active
+                </span>
+              ) : null}
+            </div>
+            <PurchaseButtons isSubscriptionActive={isSubscriptionActive ?? false} />
+          </section>
+
+          <section className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-semibold text-white">Recent usage</h2>
+              <p className="text-xs uppercase tracking-wide text-slate-500">
+                Last 5 generations
+              </p>
+            </div>
+            {usageEvents && usageEvents.length > 0 ? (
+              <div className="overflow-hidden rounded-3xl border border-white/10 bg-white/5 shadow-lg">
+                <table className="min-w-full divide-y divide-white/10 text-sm text-slate-200">
+                  <thead className="bg-white/5 text-slate-300">
+                    <tr>
+                      <th className="px-4 py-3 text-left font-medium uppercase tracking-wide">
+                        When
+                      </th>
+                      <th className="px-4 py-3 text-left font-medium uppercase tracking-wide">
+                        Provider
+                      </th>
+                      <th className="px-4 py-3 text-left font-medium uppercase tracking-wide">
+                        Approach
+                      </th>
+                      <th className="px-4 py-3 text-left font-medium uppercase tracking-wide">
+                        Credits
+                      </th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <p className="text-sm text-slate-400">
-              Generate your first room to see usage history here.
-            </p>
-          )}
-        </section>
-      </div>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    {usageEvents.map((event) => (
+                      <tr key={event.id} className="bg-white/[0.04]">
+                        <td className="px-4 py-3 text-slate-100">
+                          {formatDate(event.created_at)}
+                        </td>
+                        <td className="px-4 py-3 text-slate-300">
+                          {event.provider}
+                        </td>
+                        <td className="px-4 py-3 text-slate-300">
+                          {event.approach}
+                        </td>
+                        <td className="px-4 py-3 text-slate-300">
+                          {event.credits_consumed}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p className="text-sm text-slate-400">
+                Generate your first room to see usage history here.
+              </p>
+            )}
+          </section>
+        </div>
+      </main>
+      <Footer />
     </div>
   );
 }

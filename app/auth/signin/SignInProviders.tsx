@@ -24,7 +24,7 @@ export default function SignInProviders({
   return (
     <div className="space-y-6">
       {errorMessage ? (
-        <div className="rounded-md border border-red-500 bg-red-900/40 px-4 py-3 text-sm text-red-100">
+        <div className="rounded-2xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-200">
           {errorMessage}
         </div>
       ) : null}
@@ -36,7 +36,7 @@ export default function SignInProviders({
               key={provider.id}
               type="button"
               onClick={() => signIn(provider.id, { callbackUrl })}
-              className="w-full rounded-md bg-blue-600 px-4 py-2 text-sm font-medium hover:bg-blue-500 transition"
+              className="w-full rounded-full bg-emerald-400 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-emerald-300"
             >
               {providerLabels[provider.id] ?? `Continue with ${provider.id}`}
             </button>
@@ -120,13 +120,13 @@ function EmailAuthForm({ callbackUrl }: { callbackUrl: string }) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-slate-200">
+        <h2 className="text-sm font-semibold text-slate-100">
           {mode === "signin" ? "Sign in with email" : "Create an account"}
         </h2>
         <button
           type="button"
           onClick={toggleMode}
-          className="text-xs text-blue-400 hover:text-blue-200"
+          className="text-xs font-medium text-emerald-300 transition hover:text-emerald-100"
         >
           {mode === "signin"
             ? "Need an account? Sign up"
@@ -144,7 +144,7 @@ function EmailAuthForm({ callbackUrl }: { callbackUrl: string }) {
               name="name"
               type="text"
               autoComplete="name"
-              className="w-full rounded-md border border-slate-700 bg-[#141519] px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+              className="w-full rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:border-emerald-400 focus:outline-none"
             />
           </div>
         ) : null}
@@ -158,14 +158,13 @@ function EmailAuthForm({ callbackUrl }: { callbackUrl: string }) {
             type="email"
             required
             autoComplete="email"
-            className="w-full rounded-md border border-slate-700 bg-[#141519] px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+            className="w-full rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:border-emerald-400 focus:outline-none"
           />
         </div>
 
         <div className="space-y-1">
           <label className="block text-xs uppercase tracking-wide text-slate-400">
             Password
-
           </label>
           <input
             name="password"
@@ -173,18 +172,18 @@ function EmailAuthForm({ callbackUrl }: { callbackUrl: string }) {
             required
             minLength={8}
             autoComplete={mode === "signin" ? "current-password" : "new-password"}
-            className="w-full rounded-md border border-slate-700 bg-[#141519] px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+            className="w-full rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:border-emerald-400 focus:outline-none"
           />
         </div>
 
         {error ? (
-          <div className="rounded-md border border-red-500 bg-red-900/40 px-3 py-2 text-xs text-red-100">
+          <div className="rounded-2xl border border-red-500/40 bg-red-500/10 px-3 py-2 text-xs text-red-200">
             {error}
           </div>
         ) : null}
 
         {success ? (
-          <div className="rounded-md border border-emerald-500 bg-emerald-900/40 px-3 py-2 text-xs text-emerald-100">
+          <div className="rounded-2xl border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-200">
             {success}
           </div>
         ) : null}
@@ -192,7 +191,7 @@ function EmailAuthForm({ callbackUrl }: { callbackUrl: string }) {
         <button
           type="submit"
           disabled={pending}
-          className="w-full rounded-md bg-slate-200 px-4 py-2 text-sm font-medium text-slate-900 transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-70"
+          className="w-full rounded-full bg-emerald-400 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-70"
         >
           {pending
             ? "Processing..."

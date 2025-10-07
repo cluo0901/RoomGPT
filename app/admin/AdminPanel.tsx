@@ -141,7 +141,7 @@ export default function AdminPanel({
 
   return (
     <div className="space-y-6">
-      <section className="rounded-xl border border-slate-700 bg-[#1F2025] p-6">
+      <section className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-lg">
         <h2 className="text-lg font-semibold text-white">Find a user</h2>
         <p className="mt-1 text-sm text-slate-300">
           Look up a user by the email they use to sign in. You can then add credits
@@ -153,13 +153,13 @@ export default function AdminPanel({
             value={email}
             onChange={(event) => setEmail(event.target.value)}
             placeholder="user@example.com"
-            className="w-full rounded-md border border-slate-700 bg-[#141519] px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none"
+            className="w-full rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:border-emerald-400 focus:outline-none"
           />
           <button
             type="button"
             onClick={handleLookup}
             disabled={loading}
-            className="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-70"
+            className="inline-flex items-center justify-center rounded-full bg-emerald-400 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-70"
           >
             {loading ? "Searching…" : "Lookup"}
           </button>
@@ -167,20 +167,20 @@ export default function AdminPanel({
       </section>
 
       {error ? (
-        <div className="rounded-md border border-red-500 bg-red-900/40 px-4 py-3 text-sm text-red-100">
+        <div className="rounded-3xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-200">
           {error}
         </div>
       ) : null}
 
       {success ? (
-        <div className="rounded-md border border-emerald-500 bg-emerald-900/40 px-4 py-3 text-sm text-emerald-100">
+        <div className="rounded-3xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">
           {success}
         </div>
       ) : null}
 
       {result ? (
         <section className="space-y-6">
-          <div className="rounded-xl border border-slate-700 bg-[#1F2025] p-6">
+          <div className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-lg">
             <h3 className="text-base font-semibold text-white">User details</h3>
             <dl className="mt-3 grid gap-3 sm:grid-cols-2">
               <div>
@@ -225,7 +225,7 @@ export default function AdminPanel({
           </div>
 
           <div className="grid gap-6 md:grid-cols-2">
-            <div className="rounded-xl border border-slate-700 bg-[#1F2025] p-6 space-y-3">
+            <div className="space-y-3 rounded-3xl border border-white/10 bg-white/5 p-6 shadow-lg">
               <h3 className="text-base font-semibold text-white">Adjust credits</h3>
               <p className="text-sm text-slate-300">
                 Positive values add credits; negative values remove them.
@@ -236,29 +236,29 @@ export default function AdminPanel({
                   name="credits"
                   step="1"
                   placeholder="e.g. 5 or -3"
-                  className="w-full rounded-md border border-slate-700 bg-[#141519] px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none"
+                  className="w-full rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:border-emerald-400 focus:outline-none"
                 />
                 <button
                   type="submit"
                   disabled={actionLoading === "grant"}
-                  className="inline-flex items-center justify-center rounded-md bg-slate-200 px-4 py-2 text-sm font-medium text-slate-900 hover:bg-white disabled:cursor-not-allowed disabled:opacity-70"
+                  className="inline-flex items-center justify-center rounded-full bg-emerald-400 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-70"
                 >
                   {actionLoading === "grant" ? "Updating…" : "Apply change"}
                 </button>
               </form>
             </div>
 
-            <div className="rounded-xl border border-slate-700 bg-[#1F2025] p-6 space-y-3">
+            <div className="space-y-3 rounded-3xl border border-white/10 bg-white/5 p-6 shadow-lg">
               <h3 className="text-base font-semibold text-white">Plan controls</h3>
               <p className="text-sm text-slate-300">
                 Switch the user's plan or toggle the unlimited subscription.
               </p>
-              <div className="flex flex-col gap-2 text-sm">
+              <div className="flex flex-col gap-2 text-sm text-slate-200">
                 <button
                   type="button"
                   onClick={() => handleSetPlan("subscription", "active")}
                   disabled={actionLoading === "plan-subscription"}
-                  className="rounded-md border border-emerald-500 px-3 py-2 text-left text-emerald-100 hover:bg-emerald-900/30 disabled:cursor-not-allowed disabled:opacity-70"
+                  className="rounded-2xl border border-emerald-400/40 px-3 py-2 text-left text-emerald-200 transition hover:bg-emerald-500/10 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   Activate unlimited subscription
                 </button>
@@ -266,7 +266,7 @@ export default function AdminPanel({
                   type="button"
                   onClick={() => handleSetPlan("bundle")}
                   disabled={actionLoading === "plan-bundle"}
-                  className="rounded-md border border-blue-500 px-3 py-2 text-left text-blue-100 hover:bg-blue-900/30 disabled:cursor-not-allowed disabled:opacity-70"
+                  className="rounded-2xl border border-blue-400/40 px-3 py-2 text-left text-blue-200 transition hover:bg-blue-500/10 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   Mark as credit bundle user
                 </button>
@@ -274,7 +274,7 @@ export default function AdminPanel({
                   type="button"
                   onClick={() => handleSetPlan("pay_per_use")}
                   disabled={actionLoading === "plan-pay_per_use"}
-                  className="rounded-md border border-indigo-500 px-3 py-2 text-left text-indigo-100 hover:bg-indigo-900/30 disabled:cursor-not-allowed disabled:opacity-70"
+                  className="rounded-2xl border border-indigo-400/40 px-3 py-2 text-left text-indigo-200 transition hover:bg-indigo-500/10 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   Mark as pay-per-use user
                 </button>
@@ -282,7 +282,7 @@ export default function AdminPanel({
                   type="button"
                   onClick={() => handleSetPlan("trial")}
                   disabled={actionLoading === "plan-trial"}
-                  className="rounded-md border border-slate-600 px-3 py-2 text-left text-slate-200 hover:bg-slate-800/40 disabled:cursor-not-allowed disabled:opacity-70"
+                  className="rounded-2xl border border-white/15 px-3 py-2 text-left text-slate-200 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   Move to trial / no plan
                 </button>
@@ -290,12 +290,12 @@ export default function AdminPanel({
             </div>
           </div>
 
-          <div className="rounded-xl border border-slate-700 bg-[#1F2025] p-6">
+          <div className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-lg">
             <h3 className="text-base font-semibold text-white">Recent usage</h3>
             {result.usage.length > 0 ? (
               <div className="mt-3 overflow-auto">
-                <table className="min-w-full divide-y divide-slate-700 text-sm">
-                  <thead className="bg-slate-900/40 text-slate-300">
+                <table className="min-w-full divide-y divide-white/10 text-sm text-slate-200">
+                  <thead className="bg-white/5 text-slate-300">
                     <tr>
                       <th className="px-4 py-2 text-left font-medium">When</th>
                       <th className="px-4 py-2 text-left font-medium">Provider</th>
@@ -303,10 +303,10 @@ export default function AdminPanel({
                       <th className="px-4 py-2 text-left font-medium">Credits</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-800">
+                  <tbody className="divide-y divide-white/10">
                     {result.usage.map((event) => (
-                      <tr key={event.id} className="bg-[#1A1B20]">
-                        <td className="px-4 py-2 text-slate-200">
+                      <tr key={event.id} className="bg-white/[0.04]">
+                        <td className="px-4 py-2 text-slate-100">
                           {new Date(event.created_at).toLocaleString()}
                         </td>
                         <td className="px-4 py-2 text-slate-300">{event.provider}</td>

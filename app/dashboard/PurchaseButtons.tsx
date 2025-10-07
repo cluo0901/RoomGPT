@@ -70,7 +70,7 @@ export default function PurchaseButtons({
   return (
     <div className="space-y-4">
       {error ? (
-        <div className="rounded-md border border-red-500 bg-red-900/30 px-4 py-3 text-sm text-red-100">
+        <div className="rounded-3xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-200">
           {error}
         </div>
       ) : null}
@@ -85,17 +85,17 @@ export default function PurchaseButtons({
               type="button"
               onClick={() => handleCheckout(option.key)}
               disabled={disabled}
-              className="rounded-xl border border-slate-700 bg-[#1F2025] p-5 text-left transition hover:border-blue-500 disabled:cursor-not-allowed disabled:opacity-70"
+              className="rounded-3xl border border-white/10 bg-white/5 p-6 text-left shadow-lg transition hover:border-white/30 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              <h3 className="text-base font-semibold text-slate-100">
+              <h3 className="text-lg font-semibold text-white">
                 {option.title}
               </h3>
               <p className="mt-2 text-sm text-slate-300">{option.blurb}</p>
-              <p className="mt-3 text-xs uppercase tracking-wide text-slate-500">
+              <p className="mt-4 text-xs uppercase tracking-wide text-slate-500">
                 {option.priceHint}
               </p>
-              <span className="mt-4 inline-flex rounded-md border border-blue-500 px-3 py-1 text-xs font-medium text-blue-200">
-                {loadingKey === option.key ? "Redirecting..." : "Checkout"}
+              <span className="mt-5 inline-flex rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold text-slate-100">
+                {loadingKey === option.key ? "Redirecting…" : "Checkout"}
               </span>
             </button>
           );

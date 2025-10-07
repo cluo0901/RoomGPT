@@ -2,18 +2,32 @@
 @tailwind components;
 @tailwind utilities;
 
-@media (min-width: 400px) {
-  .background-gradient::before {
-    background: radial-gradient(
-      20% 50% at 50% 50%,
-      rgba(71, 127, 247, 0.376) 0%,
-      rgba(37, 38, 44, 0) 100%
-    );
-    z-index: -10;
-    content: "";
-    position: absolute;
-    inset: 0px;
-    transform: scale(1);
-    pointer-events: none;
-  }
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  scroll-behavior: smooth;
+  background-color: #020617;
+}
+
+.glass-surface {
+  @apply rounded-3xl border border-white/10 bg-white/5 backdrop-blur;
+}
+
+.hero-glow::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: scale(1.05);
+  background: radial-gradient(
+    circle at 30% 20%,
+    rgba(56, 189, 248, 0.25),
+    rgba(14, 116, 144, 0.1) 40%,
+    rgba(15, 23, 42, 0) 70%
+  );
+  filter: blur(60px);
+  pointer-events: none;
+  z-index: -1;
 }

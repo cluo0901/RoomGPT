@@ -1,4 +1,6 @@
 import { redirect } from "next/navigation";
+import Footer from "../../../components/Footer";
+import Header from "../../../components/Header";
 import { getAuthSession } from "../../../auth";
 import SignInProviders from "./SignInProviders";
 
@@ -53,18 +55,32 @@ export default async function SignInPage({
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-[#17181C] text-white px-6">
-      <div className="w-full max-w-md space-y-6 rounded-xl border border-slate-700 p-8 shadow-xl bg-[#1F2025]">
-        <h1 className="text-2xl font-semibold text-center">Sign in</h1>
-        <p className="text-sm text-slate-300 text-center">
-          Continue with Google or use email and password.
-        </p>
-        <SignInProviders
-          oauthProviders={oauthProviders}
-          callbackUrl={callbackUrl}
-          errorMessage={errorMessage}
-        />
-      </div>
+    <div className="min-h-screen bg-slate-950 text-slate-100 antialiased">
+      <Header />
+      <main className="mx-auto flex w-full max-w-5xl flex-col items-center gap-10 px-4 pb-24 pt-24 sm:px-6">
+        <div className="space-y-4 text-center">
+          <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-emerald-300">
+            Welcome back
+          </span>
+          <h1 className="text-4xl font-semibold tracking-tight text-white sm:text-5xl">
+            Sign in to continue exploring RoomGPT
+          </h1>
+          <p className="mx-auto max-w-xl text-sm text-slate-300 sm:text-base">
+            Access your saved generations, manage credits, and remix your rooms from any device.
+          </p>
+        </div>
+        <div className="w-full max-w-lg space-y-6 rounded-3xl border border-white/10 bg-white/5 p-8 shadow-2xl backdrop-blur">
+          <h2 className="text-lg font-semibold text-white text-center">
+            Choose how you’d like to sign in
+          </h2>
+          <SignInProviders
+            oauthProviders={oauthProviders}
+            callbackUrl={callbackUrl}
+            errorMessage={errorMessage}
+          />
+        </div>
+      </main>
+      <Footer />
     </div>
   );
 }
