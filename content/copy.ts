@@ -14,7 +14,6 @@ export const copy = {
   footer: {
     copyrightSuffix: "RoomGPT.",
     supportEmail: "support@roomgpt.io",
-    dashboardLink: "Dashboard",
   },
   home: {
     hero: {
@@ -203,6 +202,9 @@ export const copy = {
     billingReminderPrefix: "Manage billing and credits from your ",
     billingReminderLink: "dashboard",
     billingReminderSuffix: ". Unlimited plans unlock faster generations.",
+    generateButton: "Generate new design",
+    missingPhotoError: "Upload a photo to generate a new design.",
+    resultsPlaceholder: "Upload a photo and generate to view results here.",
     authBanner:
       "Sign in to generate rooms and save your progress. Credits and subscriptions live in your dashboard.",
     styleStep: "Choose your style",
@@ -264,24 +266,28 @@ export const copy = {
           title: "Single generation",
           blurb: "Perfect for one-off redesigns. Pay only when you generate.",
           hint: "Charged per request",
+          variant: "outline",
         },
         {
           key: "bundle_10",
           title: "10-credit bundle",
           blurb: "Buy 10 generations upfront at a discounted rate.",
           hint: "One-time bundle",
+          variant: "primary",
         },
         {
           key: "bundle_25",
           title: "25-credit bundle",
           blurb: "Bulk credits for power users and teams.",
           hint: "Best value bundle",
+          variant: "outline",
         },
         {
           key: "subscription_unlimited",
           title: "Unlimited monthly",
           blurb: "Unlimited generations with fair-use protections. Billed monthly.",
           hint: "Recurring subscription",
+          variant: "accent",
         },
       ],
       buttonIdle: "Checkout",

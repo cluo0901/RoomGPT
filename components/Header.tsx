@@ -22,22 +22,26 @@ export default function Header() {
   const isHome = pathname === "/";
 
   return (
-    <header className="sticky top-0 z-40 border-b border-white/10 bg-slate-950/80 backdrop-blur">
+    <header className="fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-slate-950/80 backdrop-blur">
       <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4 sm:px-6">
         <Link href="/" className="text-lg font-semibold tracking-tight text-white">
           {headerCopy.brand}
         </Link>
 
-        <div className="ml-auto hidden items-center gap-7 text-base font-semibold text-white md:flex">
-          {NAV_LINKS.map((item) => (
-            <a
-              key={item.href}
-              href={item.href}
-              className={`tracking-tight transition hover:text-emerald-300 ${!isHome ? "pointer-events-none opacity-50" : ""}`}
-            >
-              {item.label}
-            </a>
-          ))}
+        <div className="hidden flex-1 items-center justify-end gap-7 text-base font-semibold text-white md:flex">
+          {isHome ? (
+            <nav className="mr-auto ml-10 flex items-center gap-7">
+              {NAV_LINKS.map((item) => (
+                <a
+                  key={item.href}
+                  href={item.href}
+                  className="tracking-tight transition hover:text-emerald-300"
+                >
+                  {item.label}
+                </a>
+              ))}
+            </nav>
+          ) : null}
           {isAuthenticated ? (
             <Link
               href="/dashboard"

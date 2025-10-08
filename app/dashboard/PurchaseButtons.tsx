@@ -5,6 +5,20 @@ import { copy } from "../../content/copy";
 
 const purchaseCopy = copy.dashboard.purchaseButtons;
 const PLAN_OPTIONS = purchaseCopy.options;
+const planVariantClasses: Record<string, { card: string }> = {
+  outline: {
+    card:
+      "rounded-3xl border border-white/10 bg-white/5 p-6 text-left shadow-lg transition hover:border-white/30 hover:bg-white/10",
+  },
+  primary: {
+    card:
+      "rounded-3xl border border-emerald-400/30 bg-emerald-400/10 p-6 text-left shadow-lg",
+  },
+  accent: {
+    card:
+      "rounded-3xl border border-white/10 bg-white/5 p-6 text-left shadow-lg transition hover:border-white/30 hover:bg-white/10",
+  },
+};
 
 export default function PurchaseButtons({
   isSubscriptionActive,
@@ -48,6 +62,9 @@ export default function PurchaseButtons({
       ) : null}
       <div className="grid gap-4 md:grid-cols-2">
         {PLAN_OPTIONS.map((option) => {
+          const variant =
+            (option as { variant?: keyof typeof planVariantClasses }).variant ?? "outline";
+          const classes = planVariantClasses[variant] ?? planVariantClasses.outline;
           const disabled =
             loadingKey === option.key ||
             (option.key === "subscription_unlimited" && isSubscriptionActive);
@@ -57,7 +74,7 @@ export default function PurchaseButtons({
               type="button"
               onClick={() => handleCheckout(option.key)}
               disabled={disabled}
-              className="rounded-3xl border border-white/10 bg-white/5 p-6 text-left shadow-lg transition hover:border-white/30 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
+              className={`${classes.card} disabled:cursor-not-allowed disabled:opacity-60`}
             >
               <h3 className="text-lg font-semibold text-white">
                 {option.title}
@@ -66,7 +83,7 @@ export default function PurchaseButtons({
               <p className="mt-4 text-xs uppercase tracking-wide text-slate-500">
                 {option.hint}
               </p>
-              <span className="mt-5 inline-flex rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold text-slate-100">
+              <span className={`mt-5 inline-flex rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold ${variant === "primary" ? "text-emerald-900" : "text-slate-100"}`}>
                 {loadingKey === option.key ? purchaseCopy.buttonLoading : purchaseCopy.buttonIdle}
               </span>
             </button>

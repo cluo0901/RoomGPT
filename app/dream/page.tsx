@@ -7,33 +7,16 @@ import { useState } from "react";
 import { UrlBuilder } from "@bytescale/sdk";
 import { UploadWidgetConfig } from "@bytescale/upload-widget";
 import { UploadDropzone } from "@bytescale/upload-widget-react";
-import { CompareSlider } from "../../components/CompareSlider";
 import Footer from "../../components/Footer";
 import Header from "../../components/Header";
 import LoadingDots from "../../components/LoadingDots";
 import ResizablePanel from "../../components/ResizablePanel";
-import Toggle from "../../components/Toggle";
 import appendNewToName from "../../utils/appendNewToName";
 import downloadPhoto from "../../utils/downloadPhoto";
 import DropDown from "../../components/DropDown";
 import { roomType, rooms, themeType, themes } from "../../utils/dropdownTypes";
-import type { PromptSections } from "../../utils/prompts";
 import { signIn, useSession } from "next-auth/react";
 import { copy } from "../../content/copy";
-
-type GenerationMeta = {
-  seed?: number;
-  strength?: number;
-  guidanceScale?: number;
-  numInferenceSteps?: number;
-  inferenceSeconds?: number;
-  controlnets?: Array<{
-    type?: string;
-    conditioning_scale?: number;
-    low_threshold?: number;
-    high_threshold?: number;
-  }>;
-};
 
 const options: UploadWidgetConfig = {
   apiKey: !!process.env.NEXT_PUBLIC_UPLOAD_API_KEY
@@ -60,6 +43,11 @@ const options: UploadWidgetConfig = {
 };
 
 const dreamCopy = copy.dream;
+const stepIndicators = [
+  { number: "1", label: dreamCopy.uploadStep },
+  { number: "2", label: `${dreamCopy.roomStep} · ${dreamCopy.styleStep}` },
+  { number: "3", label: dreamCopy.generateButton },
+];
 
 export default function DreamPage() {
   const { status } = useSession();
@@ -69,35 +57,11 @@ export default function DreamPage() {
   const [restoredImage, setRestoredImage] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [restoredLoaded, setRestoredLoaded] = useState<boolean>(false);
-  const [sideBySide, setSideBySide] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [photoName, setPhotoName] = useState<string | null>(null);
   const [theme, setTheme] = useState<themeType>("Modern");
   const [room, setRoom] = useState<roomType>("Living Room");
-  const [promptSections, setPromptSections] = useState<PromptSections | null>(
-    null
-  );
-  const [generationMeta, setGenerationMeta] = useState<GenerationMeta | null>(
-    null
-  );
-
-  const formatFloat = (value?: number) =>
-    typeof value === "number" && !Number.isNaN(value)
-      ? value.toFixed(2)
-      : "n/a";
-
-  const toNumberOrUndefined = (value: unknown): number | undefined => {
-    if (typeof value === "number" && !Number.isNaN(value)) {
-      return value;
-    }
-    if (typeof value === "string" && value.trim() !== "") {
-      const parsed = Number(value);
-      if (!Number.isNaN(parsed)) {
-        return parsed;
-      }
-    }
-    return undefined;
-  };
+  const [pendingFileUrl, setPendingFileUrl] = useState<string | null>(null);
 
   const UploadDropZone = () => (
     <div className={!isAuthenticated ? "pointer-events-none opacity-60" : ""}>
@@ -121,7 +85,10 @@ export default function DreamPage() {
             });
             setPhotoName(imageName);
             setOriginalPhoto(imageUrl);
-            generatePhoto(imageUrl);
+            setPendingFileUrl(imageUrl);
+            setRestoredImage(null);
+            setRestoredLoaded(false);
+            setError(null);
           }
         }}
         width="100%"
@@ -129,6 +96,25 @@ export default function DreamPage() {
       />
     </div>
   );
+
+  const handleGenerateClick = () => {
+    if (loading) {
+      return;
+    }
+    if (!isAuthenticated) {
+      signIn();
+      return;
+    }
+    if (!pendingFileUrl) {
+      setError(dreamCopy.missingPhotoError);
+      return;
+    }
+
+    setError(null);
+    setRestoredImage(null);
+    setRestoredLoaded(false);
+    void generatePhoto(pendingFileUrl);
+  };
 
   async function generatePhoto(fileUrl: string) {
     if (!isAuthenticated) {
@@ -139,8 +125,7 @@ export default function DreamPage() {
     await new Promise((resolve) => setTimeout(resolve, 200));
     setLoading(true);
     setRestoredLoaded(false);
-    setPromptSections(null);
-    setGenerationMeta(null);
+    setError(null);
     const res = await fetch("/generate", {
       method: "POST",
       headers: {
@@ -175,38 +160,8 @@ export default function DreamPage() {
     if (typeof generatedImage === "string") {
       setRestoredImage(generatedImage);
       setError(null);
-      setPromptSections(newPhoto?.prompt ?? null);
-      const strengthValue = toNumberOrUndefined(newPhoto?.strength);
-      const guidanceValue = toNumberOrUndefined(
-        newPhoto?.guidanceScale ?? newPhoto?.guidance_scale
-      );
-      const inferenceSecondsValue = toNumberOrUndefined(
-        newPhoto?.inferenceSeconds ?? newPhoto?.inference_seconds
-      );
-      const stepsValueRaw =
-        typeof newPhoto?.numInferenceSteps === "number"
-          ? newPhoto.numInferenceSteps
-          : typeof newPhoto?.num_inference_steps === "number"
-          ? newPhoto.num_inference_steps
-          : toNumberOrUndefined(
-              newPhoto?.numInferenceSteps ?? newPhoto?.num_inference_steps
-            );
-      const stepsValue =
-        typeof stepsValueRaw === "number"
-          ? Math.round(stepsValueRaw)
-          : undefined;
-      setGenerationMeta({
-        seed: newPhoto?.seed,
-        strength: strengthValue,
-        guidanceScale: guidanceValue,
-        numInferenceSteps: stepsValue,
-        inferenceSeconds: inferenceSecondsValue,
-        controlnets: newPhoto?.controlnets ?? undefined,
-      });
     } else {
       setError(dreamCopy.errorFallback);
-      setPromptSections(null);
-      setGenerationMeta(null);
     }
 
     setTimeout(() => {
@@ -261,168 +216,67 @@ export default function DreamPage() {
               )}
               <ResizablePanel>
                 <AnimatePresence mode="wait">
-                  <motion.div className="flex w-full flex-col items-center gap-6 text-left">
-                    {!restoredImage ? (
-                      <div className="w-full space-y-6">
-                        <div className="space-y-3">
-                          <div className="flex items-center gap-3">
-                            <Image
-                              src="/number-1-white.svg"
-                              width={30}
-                              height={30}
-                              alt="Step one"
-                            />
-                            <p className="text-sm font-medium text-white">
-                              {dreamCopy.styleStep}
-                            </p>
+                  <motion.div className="w-full space-y-6">
+                    <ol className="relative grid grid-cols-3 gap-4 sm:gap-6">
+                      {stepIndicators.map((step, index) => (
+                        <li key={step.number} className="relative flex flex-1 flex-col items-center text-center">
+                          <div className="relative flex h-10 w-full items-center justify-center">
+                            {index > 0 ? (
+                              <span className="absolute left-0 top-1/2 hidden h-[3px] w-1/2 -translate-y-1/2 bg-gradient-to-r from-transparent via-emerald-400/50 to-emerald-400/90 sm:block" />
+                            ) : null}
+                            {index < stepIndicators.length - 1 ? (
+                              <span className="absolute right-0 top-1/2 hidden h-[3px] w-1/2 -translate-y-1/2 bg-gradient-to-r from-emerald-400/90 via-emerald-400/50 to-transparent sm:block" />
+                            ) : null}
+                            <div className="relative z-10 flex h-12 w-12 items-center justify-center rounded-full border-2 border-emerald-400 bg-slate-950 text-sm font-semibold text-emerald-200 shadow-[0_0_18px_rgba(16,185,129,0.35)]">
+                              {step.number}
+                            </div>
                           </div>
-                          <DropDown
-                            theme={theme}
-                            setTheme={(newTheme) =>
-                              setTheme(newTheme as typeof theme)
-                            }
-                            themes={themes}
-                          />
-                        </div>
-                        <div className="space-y-3">
-                          <div className="flex items-center gap-3">
-                            <Image
-                              src="/number-2-white.svg"
-                              width={30}
-                              height={30}
-                              alt="Step two"
-                            />
-                            <p className="text-sm font-medium text-white">
-                              {dreamCopy.roomStep}
-                            </p>
-                          </div>
-                          <DropDown
-                            theme={room}
-                            setTheme={(newRoom) => setRoom(newRoom as typeof room)}
-                            themes={rooms}
-                          />
-                        </div>
-                        <div className="space-y-3">
-                          <div className="flex items-center gap-3">
-                            <Image
-                              src="/number-3-white.svg"
-                              width={30}
-                              height={30}
-                              alt="Step three"
-                            />
-                            <p className="text-sm font-medium text-white">
-                              {dreamCopy.uploadStep}
-                            </p>
-                          </div>
-                          <div className="overflow-hidden rounded-2xl border border-dashed border-white/20 bg-white/5 px-4 py-6">
-                            <UploadDropZone />
-                          </div>
-                        </div>
+                          <p className="mt-3 max-w-[8rem] text-[11px] font-medium uppercase tracking-wide text-slate-400">
+                            {step.label}
+                          </p>
+                        </li>
+                      ))}
+                    </ol>
+
+                    <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                      <UploadDropZone />
+                    </div>
+
+                    <div className="rounded-2xl border border-white/10 bg-white/5 p-4 space-y-4 sm:space-y-0 sm:gap-4 sm:grid sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <p className="text-sm font-medium text-white">{dreamCopy.roomStep}</p>
+                        <DropDown
+                          theme={room}
+                          setTheme={(newRoom) => setRoom(newRoom as typeof room)}
+                          themes={rooms}
+                        />
                       </div>
-                    ) : (
-                      <div className="w-full space-y-2 text-sm text-slate-300">
-                        <p>{dreamCopy.remodelledHeading(room, theme)}</p>
-                        <p className="text-xs text-slate-400">
-                          {dreamCopy.toggleLabel}
-                        </p>
+                      <div className="space-y-2">
+                        <p className="text-sm font-medium text-white">{dreamCopy.styleStep}</p>
+                        <DropDown
+                          theme={theme}
+                          setTheme={(newTheme) => setTheme(newTheme as typeof theme)}
+                          themes={themes}
+                        />
                       </div>
-                    )}
+                    </div>
 
-                    {restoredLoaded ? (
-                      <Toggle
-                        className="self-stretch rounded-2xl border border-white/10 bg-white/5 px-4 py-3"
-                        sideBySide={sideBySide}
-                        setSideBySide={(newVal) => setSideBySide(newVal)}
-                      />
-                    ) : null}
-
-                    {restoredLoaded && sideBySide ? (
-                      <CompareSlider original={originalPhoto!} restored={restoredImage!} />
-                    ) : null}
-
-                    {originalPhoto && !restoredImage ? (
-                      <Image
-                        alt="original room"
-                        src={originalPhoto}
-                        className="h-[420px] w-full rounded-3xl object-cover"
-                        width={512}
-                        height={512}
-                      />
-                    ) : null}
-
-                    {restoredImage && originalPhoto && !sideBySide ? (
-                      <div className="grid w-full gap-4 sm:grid-cols-2">
-                        <figure className="space-y-2">
-                          <figcaption className="text-sm font-medium text-slate-200">
-                            {dreamCopy.originalLabel}
-                          </figcaption>
-                          <Image
-                            alt="original room"
-                            src={originalPhoto}
-                            className="h-[260px] w-full rounded-3xl object-cover"
-                            width={512}
-                            height={512}
-                          />
-                        </figure>
-                        <figure className="space-y-2">
-                          <figcaption className="text-sm font-medium text-slate-200">
-                            {dreamCopy.generatedLabel}
-                          </figcaption>
-                          <a href={restoredImage} target="_blank" rel="noreferrer">
-                            <Image
-                              alt="generated room"
-                              src={restoredImage}
-                              className="h-[260px] w-full cursor-zoom-in rounded-3xl object-cover"
-                              width={512}
-                              height={512}
-                              onLoadingComplete={() => setRestoredLoaded(true)}
-                              unoptimized
-                            />
-                          </a>
-                        </figure>
-                      </div>
-                    ) : null}
-
-                    {loading ? (
-                      <div className="flex w-full items-center justify-center rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-white">
-                        <LoadingDots color="white" style="large" />
-                      </div>
-                    ) : null}
-
-                    {error ? (
-                      <div
-                        className="w-full rounded-2xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-200"
-                        role="alert"
+                    <div className="space-y-3">
+                      <button
+                        type="button"
+                        onClick={handleGenerateClick}
+                        disabled={loading || !pendingFileUrl}
+                        className="inline-flex w-full items-center justify-center rounded-full bg-emerald-400 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-60"
                       >
-                        {error}
-                      </div>
-                    ) : null}
-
-                    <div className="flex w-full flex-col gap-3 sm:flex-row">
-                      {originalPhoto && !loading ? (
-                        <button
-                          onClick={() => {
-                            setOriginalPhoto(null);
-                            setRestoredImage(null);
-                            setRestoredLoaded(false);
-                            setError(null);
-                            setGenerationMeta(null);
-                            setPromptSections(null);
-                          }}
-                          className="inline-flex flex-1 items-center justify-center rounded-full border border-white/15 bg-white/5 px-5 py-2 text-sm font-semibold text-white transition hover:border-white/30 hover:bg-white/10"
+                        {loading ? <LoadingDots color="black" style="large" /> : dreamCopy.generateButton}
+                      </button>
+                      {error ? (
+                        <div
+                          className="w-full rounded-2xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-200"
+                          role="alert"
                         >
-                          {dreamCopy.newRoom}
-                        </button>
-                      ) : null}
-                      {restoredLoaded ? (
-                        <button
-                          onClick={() => {
-                            downloadPhoto(restoredImage!, appendNewToName(photoName!));
-                          }}
-                          className="inline-flex flex-1 items-center justify-center rounded-full bg-emerald-400 px-5 py-2 text-sm font-semibold text-slate-950 transition hover:bg-emerald-300"
-                        >
-                          {dreamCopy.download}
-                        </button>
+                          {error}
+                        </div>
                       ) : null}
                     </div>
                   </motion.div>
@@ -432,90 +286,77 @@ export default function DreamPage() {
           </div>
         </section>
 
-        {promptSections ? (
-          <section className="rounded-[2.5rem] border border-white/10 bg-white/5 p-8 text-left shadow-2xl backdrop-blur">
-            <div className="space-y-6">
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-baseline sm:justify-between">
-                <h2 className="text-2xl font-semibold text-white">{dreamCopy.promptTitle}</h2>
-                {generationMeta?.inferenceSeconds ? (
-                  <p className="text-xs uppercase tracking-wide text-slate-400">
-                    Generated in {generationMeta.inferenceSeconds.toFixed(1)} seconds
-                  </p>
-                ) : null}
-              </div>
-              <div className="grid gap-6 sm:grid-cols-3">
-                <div>
-                  <p className="text-xs uppercase tracking-wide text-slate-400">
-                    {dreamCopy.promptGeneral}
-                  </p>
-                  <p className="mt-2 text-sm leading-6 text-slate-200">
-                    {promptSections.general}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs uppercase tracking-wide text-slate-400">
-                    {dreamCopy.promptRoom}
-                  </p>
-                  <p className="mt-2 text-sm leading-6 text-slate-200">
-                    {promptSections.room}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs uppercase tracking-wide text-slate-400">
-                    {dreamCopy.promptTheme}
-                  </p>
-                  <p className="mt-2 text-sm leading-6 text-slate-200">
-                    {promptSections.theme}
-                  </p>
-                </div>
-              </div>
-              {generationMeta ? (
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-slate-200">
-                    <p className="text-xs uppercase tracking-wide text-slate-400">{dreamCopy.sampling}</p>
-                    <div className="mt-2 space-y-1.5">
-                      <p>Seed: {generationMeta.seed ?? "Random"}</p>
-                      <p>Strength: {formatFloat(generationMeta.strength)}</p>
-                      <p>Guidance: {formatFloat(generationMeta.guidanceScale)}</p>
-                      <p>Steps: {generationMeta.numInferenceSteps ?? "n/a"}</p>
-                    </div>
-                  </div>
-                  {generationMeta.controlnets ? (
-                    <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-slate-200">
-                    <p className="text-xs uppercase tracking-wide text-slate-400">
-                      {dreamCopy.controlnet}
-                    </p>
-                      <div className="mt-2 space-y-2">
-                        {generationMeta.controlnets.map((item, index) => {
-                          const conditioningScale =
-                            typeof item.conditioning_scale === "number"
-                              ? item.conditioning_scale
-                              : Number(item.conditioning_scale);
+        {(originalPhoto || restoredImage || loading) && (
+          <section className="space-y-6">
+            <div className="grid gap-6 lg:grid-cols-2">
+              {originalPhoto ? (
+                <figure className="space-y-4">
+                  <figcaption className="text-sm font-semibold uppercase tracking-wide text-slate-400">
+                    {dreamCopy.originalLabel}
+                  </figcaption>
+                  <Image
+                    alt="original room"
+                    src={originalPhoto}
+                    className="aspect-[4/3] w-full rounded-[28px] object-cover"
+                    width={768}
+                    height={576}
+                  />
+                </figure>
+              ) : null}
 
-                          return (
-                            <div key={`${item.type}-${index}`} className="space-y-1">
-                              <p>Type: {item.type ?? "canny"}</p>
-                              {item.conditioning_scale !== undefined ? (
-                                <p>Scale: {formatFloat(conditioningScale)}</p>
-                              ) : null}
-                              {item.low_threshold !== undefined ||
-                              item.high_threshold !== undefined ? (
-                                <p>
-                                  Thresholds: {item.low_threshold ?? "?"}/
-                                  {item.high_threshold ?? "?"}
-                                </p>
-                              ) : null}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ) : null}
-                </div>
+              <figure className="space-y-4">
+                <figcaption className="text-sm font-semibold uppercase tracking-wide text-slate-400">
+                  {dreamCopy.generatedLabel}
+                </figcaption>
+                {restoredImage ? (
+                  <a href={restoredImage} target="_blank" rel="noreferrer">
+                    <Image
+                      alt="generated room"
+                      src={restoredImage}
+                      className="aspect-[4/3] w-full cursor-zoom-in rounded-[28px] object-cover"
+                      width={768}
+                      height={576}
+                      onLoadingComplete={() => setRestoredLoaded(true)}
+                      unoptimized
+                    />
+                  </a>
+                ) : (
+                  <div className="flex aspect-[4/3] w-full items-center justify-center rounded-[28px] border border-dashed border-white/15 bg-white/5">
+                    {loading ? <LoadingDots color="white" style="large" /> : <p className="text-sm text-slate-500">{dreamCopy.resultsPlaceholder}</p>}
+                  </div>
+                )}
+              </figure>
+            </div>
+
+            <div className="flex flex-col gap-3 sm:flex-row">
+              {originalPhoto && !loading ? (
+                <button
+                  onClick={() => {
+                    setOriginalPhoto(null);
+                    setRestoredImage(null);
+                    setRestoredLoaded(false);
+                    setError(null);
+                    setPendingFileUrl(null);
+                    setPhotoName(null);
+                  }}
+                  className="inline-flex flex-1 items-center justify-center rounded-full border border-white/15 bg-white/5 px-5 py-2 text-sm font-semibold text-white transition hover:border-white/30 hover:bg-white/10"
+                >
+                  {dreamCopy.newRoom}
+                </button>
+              ) : null}
+              {restoredLoaded && restoredImage ? (
+                <button
+                  onClick={() => {
+                    downloadPhoto(restoredImage, appendNewToName(photoName ?? "room"));
+                  }}
+                  className="inline-flex flex-1 items-center justify-center rounded-full bg-emerald-400 px-5 py-2 text-sm font-semibold text-slate-950 transition hover:bg-emerald-300"
+                >
+                  {dreamCopy.download}
+                </button>
               ) : null}
             </div>
           </section>
-        ) : null}
+        )}
       </main>
       <Footer />
     </div>
